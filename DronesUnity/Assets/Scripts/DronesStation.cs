@@ -14,6 +14,8 @@ public class DronesStation : MonoBehaviour
 
     private Queue<Vector3> _brokenPillarsQueue = new();
 
+    private bool _isSubscribetToDrones;
+
     public void Initialize()
     {
         Pillar[] pillarsArray = FindObjectsOfType<Pillar>();
@@ -25,29 +27,60 @@ public class DronesStation : MonoBehaviour
                 _pillarCoordinatesDict.Add(pillar.ID, pillar.transform.position);
             }
         }
+
+
+        int newId = 0;
+        foreach (Drone drone in _drones)
+        {
+            drone.Initialize(newId, transform.position);
+            newId++;
+        }
     }
 
     public void SayAboutBrokenPillar(string id)
     {
         _pillarCoordinatesDict.TryGetValue(id, out Vector3 targetPillarPosition);
 
+        SendDrone(targetPillarPosition);
+    }
+
+    private void SendDrone(Vector3 targetPillarPosition)
+    {
+        Debug.Log($"@Drones station: Trying to send drone");
         Drone droneToFly = GetMostChargedDrone();
 
         if (droneToFly == null)
         {
-            Debug.LogError($"All drones are busy");
             _brokenPillarsQueue.Enqueue(targetPillarPosition);
+
+            if (!_isSubscribetToDrones)
+            {
+                SubscribeAllDrones(true);
+                _isSubscribetToDrones = true;
+            }
+            Debug.LogError($"@Drones station: All drones are busy. Task added to queue");
             return;
         }
 
+        Debug.Log($"@Drones station: free drone founded");
+
         droneToFly.SetTarget(targetPillarPosition);
+        droneToFly.SetHeight(20f);
+        droneToFly.Launch();
     }
 
 
+    private void DroneCharged(int droneID)
+    {
+        if (_isSubscribetToDrones)
+        {
+            SubscribeAllDrones(false);
+            _isSubscribetToDrones = false;
+        }
 
-
-
-
+        Vector3 brokenPillarPos = _brokenPillarsQueue.Peek();
+        SendDrone(brokenPillarPos);
+    }
 
     private Drone GetMostChargedDrone()
     {
@@ -65,5 +98,23 @@ public class DronesStation : MonoBehaviour
         }
 
         return mostChargedDrone;
+    }
+
+    private void SubscribeAllDrones(bool subscribe)
+    {
+        if (subscribe)
+        {
+            foreach (Drone drone in _drones)
+            {
+                drone.OnDroneChargetEnought += DroneCharged;
+            }
+        }
+        else
+        {
+            foreach (Drone drone in _drones)
+            {
+                drone.OnDroneChargetEnought -= DroneCharged;
+            }
+        }
     }
 }

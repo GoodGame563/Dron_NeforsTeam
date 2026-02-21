@@ -17,7 +17,7 @@ public class Pillar : MonoBehaviour
 
     private bool _isSignalsWorking;
 
-    public event Action OnBroken;
+    public event Action<string> OnBroken;
 
     public void Initialize(string newId)
     {
@@ -54,9 +54,9 @@ public class Pillar : MonoBehaviour
     public void SetBrokenState()
     {
         CurrentState = PillarState.Broken;
-        Debug.LogWarning($"Pillar {ID} is broken");
+        Debug.LogWarning($"@Debug: You broke the Pillar {ID}");
 
-        OnBroken?.Invoke();
+        OnBroken?.Invoke(ID);
         //так же мен€ть материалы дл€ визуализации и прочее
     }
 }
