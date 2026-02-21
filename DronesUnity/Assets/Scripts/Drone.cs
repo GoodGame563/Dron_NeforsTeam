@@ -49,11 +49,13 @@ public class Drone : MonoBehaviour
 
     public event Action<int> OnDroneChargetEnought;
     public event Action<int> OnDroneReachedTarget; // Событие достижения цели
+    public event Action<int> OnDroneAtHome; // Событие достижения цели
     public event Action<int, FlightSubState> OnFlightStateChanged; // Событие изменения состояния полета
 
     private Coroutine _flightCoroutine;
     private Coroutine _hoverCoroutine;
     private bool _isHovering = false;
+    private bool _isGoHome;
 
     public void Initialize(int newId, Vector3 stationCoordinates)
     {
@@ -79,6 +81,13 @@ public class Drone : MonoBehaviour
         Debug.Log($"Drone ({ID}) launched");
 
         _flightCoroutine = StartCoroutine(FlySequence());
+    }
+
+    public void GoHome()
+    {
+        SetTarget(_stationCoordinates);
+        Launch();
+        Debug.LogWarning($"Drone ({ID}) go home");
     }
 
     private IEnumerator FlySequence()
@@ -113,8 +122,18 @@ public class Drone : MonoBehaviour
         Debug.Log($"Дрон {ID}: Достиг цели!");
         CurrentDroneState = DronState.Charging;
         SetFlightState(FlightSubState.Hovering);
-        OnDroneReachedTarget?.Invoke(ID);
+
+        if (_isGoHome)
+        {
+            OnDroneAtHome?.Invoke(ID);
+        }
+        else
+        {
+            OnDroneReachedTarget?.Invoke(ID);
+        }
     }
+
+    #region Fly process
 
     private IEnumerator LiftToHeight(float targetHeight)
     {
@@ -198,6 +217,10 @@ public class Drone : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region Hovering
+
     // Метод для зависания на текущей высоте
     private void StartHovering()
     {
@@ -251,6 +274,8 @@ public class Drone : MonoBehaviour
         return _isHovering && CurrentFlightState == FlightSubState.Hovering;
     }
 
+    #endregion
+
     private void SetFlightState(FlightSubState newState)
     {
         if (CurrentFlightState != newState)
@@ -299,10 +324,12 @@ public class Drone : MonoBehaviour
 
     public void SetTarget(Vector3 targetCoordinates)
     {
+        _isGoHome = (targetCoordinates == _stationCoordinates);
+
         System.Random rand = new System.Random();
         //разброс в радиусе 3м от таргет точки, тк gps не точный
-        float factorX = rand.Next(-300, 301) / 10;
-        float factorZ = rand.Next(-300, 301) / 10;
+        float factorX = rand.Next(-300, 301) / 100;
+        float factorZ = rand.Next(-300, 301) / 100;
 
         _targetCoordinates = new Vector3(targetCoordinates.x + factorX, 
                                          targetCoordinates.y, 

@@ -41,7 +41,17 @@ public class DronesStation : MonoBehaviour
     {
         _pillarCoordinatesDict.TryGetValue(id, out Vector3 targetPillarPosition);
 
+        //перед этим еще очередь проверить отправить сначало на корды из очереди
+
         SendDrone(targetPillarPosition);
+    }
+
+    public void GoHomeAll()
+    {
+        foreach (Drone drone in _drones)
+        {
+            drone.GoHome();
+        }
     }
 
     private void SendDrone(Vector3 targetPillarPosition)
@@ -70,15 +80,19 @@ public class DronesStation : MonoBehaviour
     }
 
 
-    private void DroneCharged(int droneID)
+    private void DroneReady(int droneID)
     {
-        if (_isSubscribetToDrones)
+        _drones[droneID].OnDroneChargetEnought -= DroneReady;
+        _drones[droneID].OnDroneAtHome -= DroneReady;
+
+        Vector3 brokenPillarPos = _brokenPillarsQueue.Peek();
+
+        if (_brokenPillarsQueue.Count == 0)
         {
             SubscribeAllDrones(false);
             _isSubscribetToDrones = false;
         }
 
-        Vector3 brokenPillarPos = _brokenPillarsQueue.Peek();
         SendDrone(brokenPillarPos);
     }
 
@@ -106,14 +120,19 @@ public class DronesStation : MonoBehaviour
         {
             foreach (Drone drone in _drones)
             {
-                drone.OnDroneChargetEnought += DroneCharged;
+                if (drone.CurrentDroneState == Drone.DronState.Charging)
+                {
+                    drone.OnDroneChargetEnought += DroneReady;
+                    drone.OnDroneAtHome += DroneReady;
+                }
             }
         }
         else
         {
             foreach (Drone drone in _drones)
             {
-                drone.OnDroneChargetEnought -= DroneCharged;
+                drone.OnDroneChargetEnought -= DroneReady;
+                drone.OnDroneAtHome -= DroneReady;
             }
         }
     }

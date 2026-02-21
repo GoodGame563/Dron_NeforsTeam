@@ -21,16 +21,15 @@ public class PillarDebug : MonoBehaviour
 
     public void BrokePillar(int id)
     {
+        System.Random rand = new();
+        id = rand.Next(0, _pillars.Count);
+
         if (id >= _pillars.Count)
         {
             Debug.LogError("There is no pillar with thid id");
             return;
         }
 
-        _pillars[id].SetBrokenState();
-        id+=2;
-        _pillars[id].SetBrokenState();
-        id+= 3;
         _pillars[id].SetBrokenState();
     }
 }

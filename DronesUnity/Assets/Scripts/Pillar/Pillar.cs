@@ -53,6 +53,10 @@ public class Pillar : MonoBehaviour
     /// </summary>
     public void SetBrokenState()
     {
+        if (CurrentState == PillarState.Broken)
+        {
+            Debug.LogWarning($"Pillar ({ID}) already broken!");
+        }
         CurrentState = PillarState.Broken;
         Debug.LogWarning($"@Debug: You broke the Pillar {ID}");
 
