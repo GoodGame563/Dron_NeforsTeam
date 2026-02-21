@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" version="29.5.1">
   <diagram name="Page-1" id="0783ab3e-0a74-02c8-0abd-f7b4e66b4bec">
-    <mxGraphModel dx="2143" dy="869" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" background="none" math="0" shadow="0">
+    <mxGraphModel dx="1507" dy="715" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" background="none" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -644,7 +644,7 @@
         <mxCell id="WSvJsEQdBtFgW198-SFb-165" parent="WSvJsEQdBtFgW198-SFb-164" style="swimlane;html=1;startSize=20;" value="Сервер" vertex="1">
           <mxGeometry height="4250" width="250" y="20" as="geometry" />
         </mxCell>
-        <mxCell id="WSvJsEQdBtFgW198-SFb-166" parent="WSvJsEQdBtFgW198-SFb-165" style="rounded=1;whiteSpace=wrap;html=1;arcSize=40;fontColor=#000000;fillColor=#ffffc0;strokeColor=#ff0000;" value="Выслать дрон на починку" vertex="1">
+        <mxCell id="WSvJsEQdBtFgW198-SFb-166" parent="WSvJsEQdBtFgW198-SFb-165" style="rounded=1;whiteSpace=wrap;html=1;arcSize=40;fontColor=#000000;fillColor=#ffffc0;strokeColor=#ff0000;" value="Выслать дрон на ремонт лампы" vertex="1">
           <mxGeometry height="40" width="120" x="60" y="230" as="geometry" />
         </mxCell>
         <mxCell id="WSvJsEQdBtFgW198-SFb-170" parent="WSvJsEQdBtFgW198-SFb-165" style="rhombus;whiteSpace=wrap;html=1;fontColor=#000000;fillColor=#ffffc0;strokeColor=#ff0000;" value="Возможно обледенение" vertex="1">
