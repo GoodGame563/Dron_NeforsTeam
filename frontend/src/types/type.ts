@@ -6,6 +6,7 @@ export interface Lamp {
   stationId: string;
   position: { x: number; y: number };
   status: LampStatus;
+  updatedAt: Date;
 }
 
 export interface Drone {

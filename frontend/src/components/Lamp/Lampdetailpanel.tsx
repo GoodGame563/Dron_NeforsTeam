@@ -6,8 +6,16 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { Lightbulb, LightbulbOff, CircleOff, X, Send } from "lucide-react";
-import type { Lamp, Station, LampStatus } from "../../types/type.ts";
+import {
+  Lightbulb,
+  LightbulbOff,
+  CircleOff,
+  X,
+  Send,
+  Clock,
+} from "lucide-react";
+import type { Lamp, Station, LampStatus } from "../../types/type";
+import { formatRelativeTime } from "../../utils/formatRelativeTime";
 
 interface LampDetailPanelProps {
   lamp: Lamp;
@@ -46,6 +54,13 @@ export function LampDetailPanel({
   const canDispatch = lamp.status === "death" || lamp.status === "empty";
   const hasAvailableDrone = station ? station.availableDrones > 0 : false;
 
+  const timePrefix =
+    lamp.status === "alive"
+      ? "Работает"
+      : lamp.status === "death"
+        ? "Сломана"
+        : "Пуста";
+
   return (
     <Box
       sx={{
@@ -59,6 +74,7 @@ export function LampDetailPanel({
         gap: 2,
       }}
     >
+      {/* Иконка фонаря */}
       <Box
         sx={{
           width: 40,
@@ -76,6 +92,7 @@ export function LampDetailPanel({
         <LampIcon status={lamp.status} />
       </Box>
 
+      {/* Основная информация */}
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
           <Typography variant="body2" fontWeight={500}>
@@ -83,7 +100,14 @@ export function LampDetailPanel({
           </Typography>
           <Chip label={label} color={color} size="small" />
         </Box>
-        <Box sx={{ display: "flex", gap: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            flexWrap: "wrap",
+          }}
+        >
           {station && (
             <Typography variant="caption" color="text.secondary">
               {station.name}
@@ -92,9 +116,16 @@ export function LampDetailPanel({
           <Typography variant="caption" color="text.disabled">
             x: {Math.round(lamp.position.x)}, y: {Math.round(lamp.position.y)}
           </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Clock size={11} color="rgba(255,255,255,0.3)" />
+            <Typography variant="caption" color="text.disabled">
+              {timePrefix} {formatRelativeTime(lamp.updatedAt)}
+            </Typography>
+          </Box>
         </Box>
       </Box>
 
+      {/* Предупреждение если нет свободных дронов */}
       {canDispatch && !hasAvailableDrone && (
         <Typography
           variant="caption"
@@ -105,6 +136,7 @@ export function LampDetailPanel({
         </Typography>
       )}
 
+      {/* Кнопка отправки */}
       {canDispatch && (
         <Tooltip title={!hasAvailableDrone ? "Нет свободных дронов" : ""}>
           <span>
