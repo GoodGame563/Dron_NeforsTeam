@@ -1,3 +1,4 @@
+import { Box, Typography, Divider } from "@mui/material";
 import { StationCard } from "./StationCard";
 import type { Station } from "../../types/type.ts";
 
@@ -13,7 +14,6 @@ export function StationList({
   onSelectStation,
 }: StationListProps) {
   function handleSelect(station: Station) {
-    // Повторный клик на выбранную станцию снимает выделение
     if (selectedStation?.id === station.id) {
       onSelectStation(null);
     } else {
@@ -29,41 +29,87 @@ export function StationList({
   const brokenDrones = stations.reduce((sum, s) => sum + s.brokenDrones, 0);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Суммарная статистика */}
-      <div className="px-4 py-3 border-b border-white/10">
-        <p className="text-[11px] text-white/40 uppercase tracking-widest mb-2">
+    <Box
+      sx={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
+      <Box sx={{ px: 2, py: 1.5 }}>
+        <Typography
+          variant="caption"
+          color="text.disabled"
+          sx={{ textTransform: "uppercase", letterSpacing: 1.5 }}
+        >
           Общая статистика
-        </p>
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div>
-            <p className="text-lg font-semibold text-white tabular-nums">
+        </Typography>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            textAlign: "center",
+            mt: 1,
+          }}
+        >
+          <Box>
+            <Typography variant="h6" fontWeight={600}>
               {totalDrones}
-            </p>
-            <p className="text-[10px] text-white/40">всего</p>
-          </div>
-          <div>
-            <p className="text-lg font-semibold text-emerald-400 tabular-nums">
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              всего
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="h6" fontWeight={600} color="success.main">
               {availableDrones}
-            </p>
-            <p className="text-[10px] text-white/40">свободно</p>
-          </div>
-          <div>
-            <p className="text-lg font-semibold text-red-400 tabular-nums">
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              свободно
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="h6" fontWeight={600} color="error.main">
               {brokenDrones}
-            </p>
-            <p className="text-[10px] text-white/40">сломано</p>
-          </div>
-        </div>
-      </div>
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              сломано
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
 
-      {/* Список станций */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
-        <p className="text-[11px] text-white/40 uppercase tracking-widest px-1 mb-1">
+      <Divider />
+
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          px: 1.5,
+          py: 1.5,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1,
+        }}
+      >
+        <Typography
+          variant="caption"
+          color="text.disabled"
+          sx={{ textTransform: "uppercase", letterSpacing: 1.5, px: 0.5 }}
+        >
           Станции ({stations.length})
-        </p>
+        </Typography>
+
         {stations.length === 0 ? (
-          <p className="text-sm text-white/30 text-center py-8">Нет станций</p>
+          <Typography
+            variant="body2"
+            color="text.disabled"
+            textAlign="center"
+            sx={{ py: 4 }}
+          >
+            Нет станций
+          </Typography>
         ) : (
           stations.map((station) => (
             <StationCard
@@ -74,7 +120,7 @@ export function StationList({
             />
           ))
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

@@ -1,4 +1,13 @@
-import { Card } from "../ui/Card";
+import {
+  Card,
+  CardActionArea,
+  CardContent,
+  Chip,
+  Typography,
+  Box,
+  Tooltip,
+} from "@mui/material";
+import { Bolt, Build, FlightTakeoff } from "@mui/icons-material";
 import type { Station } from "../../types/type.ts";
 
 interface StationCardProps {
@@ -8,30 +17,44 @@ interface StationCardProps {
 }
 
 interface StatItemProps {
-  label: string;
+  icon: React.ReactNode;
   value: number;
-  valueClassName?: string;
+  label: string;
+  color: string;
 }
 
-function StatItem({
-  label,
-  value,
-  valueClassName = "text-white",
-}: StatItemProps) {
+function StatItem({ icon, value, label, color }: StatItemProps) {
   return (
-    <div className="flex flex-col items-center gap-0.5">
-      <span
-        className={[
-          "text-base font-semibold tabular-nums",
-          valueClassName,
-        ].join(" ")}
+    <Tooltip title={label} placement="top">
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 0.5,
+        }}
       >
-        {value}
-      </span>
-      <span className="text-[10px] text-white/40 text-center leading-tight">
-        {label}
-      </span>
-    </div>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color }}>
+          {icon}
+          <Typography
+            variant="body2"
+            fontWeight={600}
+            color={color}
+            lineHeight={1}
+          >
+            {value}
+          </Typography>
+        </Box>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          fontSize={10}
+          lineHeight={1}
+        >
+          {label}
+        </Typography>
+      </Box>
+    </Tooltip>
   );
 }
 
@@ -41,50 +64,95 @@ export function StationCard({ station, selected, onSelect }: StationCardProps) {
 
   return (
     <Card
-      selected={selected}
-      onClick={() => onSelect(station)}
-      className="p-3.5"
+      sx={{
+        borderColor: selected ? "primary.main" : "divider",
+        bgcolor: selected ? "rgba(59,130,246,0.10)" : "rgba(255,255,255,0.04)",
+      }}
     >
-      {/* Заголовок */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <div
-            className={[
-              "w-2 h-2 rounded-full flex-shrink-0 mt-0.5",
-              station.availableDrones > 0 ? "bg-emerald-400" : "bg-amber-400",
-            ].join(" ")}
-          />
-          <span className="text-sm font-medium text-white truncate">
-            {station.name}
-          </span>
-        </div>
-        <span className="text-xs text-white/30 flex-shrink-0">
-          {station.lampCount} фонарей
-        </span>
-      </div>
+      <CardActionArea
+        onClick={() => onSelect(station)}
+        sx={{ borderRadius: "inherit" }}
+      >
+        <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+          {/* Заголовок */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 1.5,
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                minWidth: 0,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  bgcolor:
+                    station.availableDrones > 0
+                      ? "success.main"
+                      : "warning.main",
+                }}
+              />
+              <Typography variant="body2" fontWeight={500} noWrap>
+                {station.name}
+              </Typography>
+            </Box>
+            <Chip
+              label={`${station.lampCount} фонарей`}
+              size="small"
+              sx={{ fontSize: 10, height: 18, color: "text.secondary" }}
+            />
+          </Box>
 
-      {/* Статистика дронов */}
-      <div className="grid grid-cols-3 gap-1 bg-white/5 rounded-lg px-2 py-2">
-        <StatItem
-          label="свободных"
-          value={station.availableDrones}
-          valueClassName={
-            station.availableDrones > 0 ? "text-emerald-400" : "text-white/40"
-          }
-        />
-        <StatItem
-          label="в работе"
-          value={busyDrones}
-          valueClassName={busyDrones > 0 ? "text-blue-400" : "text-white/40"}
-        />
-        <StatItem
-          label="сломано"
-          value={station.brokenDrones}
-          valueClassName={
-            station.brokenDrones > 0 ? "text-red-400" : "text-white/40"
-          }
-        />
-      </div>
+          {/* Статистика дронов */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: 1,
+              bgcolor: "rgba(255,255,255,0.04)",
+              borderRadius: 2,
+              px: 1,
+              py: 1,
+            }}
+          >
+            <StatItem
+              icon={<Bolt sx={{ fontSize: 13 }} />}
+              value={station.availableDrones}
+              label="свободных"
+              color={
+                station.availableDrones > 0
+                  ? "#34d399"
+                  : "rgba(255,255,255,0.3)"
+              }
+            />
+            <StatItem
+              icon={<FlightTakeoff sx={{ fontSize: 13 }} />}
+              value={busyDrones}
+              label="в работе"
+              color={busyDrones > 0 ? "#60a5fa" : "rgba(255,255,255,0.3)"}
+            />
+            <StatItem
+              icon={<Build sx={{ fontSize: 13 }} />}
+              value={station.brokenDrones}
+              label="сломано"
+              color={
+                station.brokenDrones > 0 ? "#f87171" : "rgba(255,255,255,0.3)"
+              }
+            />
+          </Box>
+        </CardContent>
+      </CardActionArea>
     </Card>
   );
 }
