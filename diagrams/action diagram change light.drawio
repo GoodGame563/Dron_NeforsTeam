@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 YaBrowser/25.12.0.0 Safari/537.36" version="29.5.1">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" version="29.5.1">
   <diagram name="Page-1" id="0783ab3e-0a74-02c8-0abd-f7b4e66b4bec">
-    <mxGraphModel dx="2431" dy="904" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" background="none" math="0" shadow="0">
+    <mxGraphModel dx="1667" dy="676" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" background="none" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -753,7 +753,7 @@
         <mxCell id="WSvJsEQdBtFgW198-SFb-192" parent="WSvJsEQdBtFgW198-SFb-191" style="rounded=1;whiteSpace=wrap;html=1;arcSize=40;fontColor=#000000;fillColor=#ffffc0;strokeColor=#ff0000;" value="Поиск свободного дрона" vertex="1">
           <mxGeometry height="40" width="120" x="75" y="280" as="geometry" />
         </mxCell>
-        <mxCell id="WSvJsEQdBtFgW198-SFb-199" parent="WSvJsEQdBtFgW198-SFb-191" style="rounded=1;whiteSpace=wrap;html=1;arcSize=40;fontColor=#000000;fillColor=#ffffc0;strokeColor=#ff0000;" value="Выдать кординаты" vertex="1">
+        <mxCell id="WSvJsEQdBtFgW198-SFb-199" parent="WSvJsEQdBtFgW198-SFb-191" style="rounded=1;whiteSpace=wrap;html=1;arcSize=40;fontColor=#000000;fillColor=#ffffc0;strokeColor=#ff0000;" value="Задать маршурт" vertex="1">
           <mxGeometry height="40" width="120" x="75" y="410" as="geometry" />
         </mxCell>
         <mxCell id="WSvJsEQdBtFgW198-SFb-200" parent="WSvJsEQdBtFgW198-SFb-191" style="rounded=1;whiteSpace=wrap;html=1;arcSize=40;fontColor=#000000;fillColor=#ffffc0;strokeColor=#ff0000;" value="Исполнитель найден" vertex="1">
