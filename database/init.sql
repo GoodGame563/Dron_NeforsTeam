@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS pillars (
     latitude          DOUBLE PRECISION NOT NULL,
     longitude         DOUBLE PRECISION NOT NULL,
     state             pillar_state NOT NULL DEFAULT 'empty',
-    id_pillar_station UUID NOT NULL,
+    id_pillar_station UUID NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS pillar_to_dron_station (
@@ -61,11 +61,10 @@ CREATE TABLE IF NOT EXISTS history (
     id_pillars       UUID NOT NULL,
     id_dron          UUID NOT NULL,
     status           history_status NOT NULL,
-    update_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    update_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_pillars_station ON pillars(id_pillar_station);
-CREATE INDEX IF NOT EXISTS idx_drons_pillars ON drons(id_pillars);
 CREATE INDEX IF NOT EXISTS idx_drons_station ON drons(id_dron_station);
 CREATE INDEX IF NOT EXISTS idx_history_dron ON history(id_dron);
 CREATE INDEX IF NOT EXISTS idx_history_update ON history(update_at DESC);
