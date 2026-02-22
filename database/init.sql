@@ -82,6 +82,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION get_all_pillar_stations() RETURNS SETOF pillar_stations AS $$
+BEGIN
+    RETURN QUERY SELECT * FROM pillar_stations;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION insert_pillar_station(
     p_latitude DOUBLE PRECISION, 
     p_longitude DOUBLE PRECISION, 
@@ -120,6 +126,12 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION get_dron_station(p_id UUID) RETURNS SETOF dron_stations AS $$
 BEGIN
     RETURN QUERY SELECT * FROM dron_stations WHERE id = p_id;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_all_dron_stations() RETURNS SETOF dron_stations AS $$
+BEGIN
+    RETURN QUERY SELECT * FROM dron_stations;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -171,6 +183,12 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION get_pillar(p_id UUID) RETURNS SETOF pillars AS $$
 BEGIN
     RETURN QUERY SELECT * FROM pillars WHERE id = p_id;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_all_pillars() RETURNS SETOF pillars AS $$
+BEGIN
+    RETURN QUERY SELECT * FROM pillars;
 END;
 $$ LANGUAGE plpgsql;
 

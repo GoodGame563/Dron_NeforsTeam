@@ -2,12 +2,13 @@
 
 ## Обзор
 
-Сервер предоставляет два WebSocket эндпоинта для взаимодействия с различными типами клиентов:
+Сервер предоставляет три WebSocket эндпоинта для взаимодействия с различными типами клиентов:
 
 | Эндпоинт | Тип клиента | Описание |
 |----------|-------------|----------|
 | `/pillar_station` | Pillar Station | Управление столбами освещения |
 | `/dron_station` | Drone Station | Управление станцией дронов |
+| `/frontend` | Frontend | Получение всех данных системы |
 
 ---
 
@@ -103,7 +104,130 @@ ws://server:port/pillar_station
 
 ---
 
-## 2. Drone Station (`/dron_station`)
+## 2. Frontend (`/frontend`)
+
+Клиент для получения данных о состоянии всей системы (столбы, станции, дроны).
+
+### Подключение
+
+```
+ws://server:port/frontend
+```
+
+### Процесс подключения
+
+При успешном подключении сервер автоматически отправляет все данные системы.
+
+#### Ответ сервера (all_data)
+
+```json
+{
+  "event": "all_data",
+  "data": {
+    "pillars": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440010",
+        "coordinates": {
+          "x": 55.751244,
+          "y": 37.618423
+        },
+        "state": "empty",
+        "pillar_station_id": "550e8400-e29b-41d4-a716-446655440000",
+        "last_update": "2026-02-23T12:00:00"
+      }
+    ],
+    "pillar_stations": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "coordinates": {
+          "x": 55.751244,
+          "y": 37.618423
+        },
+        "is_alive": true
+      }
+    ],
+    "dron_stations": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440001",
+        "coordinates": {
+          "x": 55.755000,
+          "y": 37.620000
+        },
+        "radius": 1000,
+        "total_drone_count": 10,
+        "total_lamps_count": 50,
+        "drons": [
+          {
+            "id": "550e8400-e29b-41d4-a716-446655440011",
+            "status": "in_station",
+            "last_coordinates": {
+              "x": 55.755000,
+              "y": 37.620000
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `event` | string | Всегда `"all_data"` |
+| `data` | object | Объект с данными системы |
+| `data.pillars` | array | Массив всех столбов |
+| `data.pillar_stations` | array | Массив всех станций столбов |
+| `data.dron_stations` | array | Массив всех станций дронов |
+
+**Структура столба (`pillar`):**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | UUID (string) | Идентификатор столба |
+| `coordinates` | object | Координаты столба |
+| `coordinates.x` | int | Широта |
+| `coordinates.y` | int | Долгота |
+| `state` | string | Состояние: `"empty"`, `"death"`, `"occupied"` |
+| `pillar_station_id` | UUID (string) | ID станции столбов |
+| `last_update` | datetime | Время последнего обновления |
+
+**Структура станции столбов (`pillar_station`):**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | UUID (string) | Идентификатор станции |
+| `coordinates` | object | Координаты станции |
+| `coordinates.x` | int | Широта |
+| `coordinates.y` | int | Долгота |
+| `is_alive` | boolean | Статус активности |
+
+**Структура станции дронов (`dron_station`):**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | UUID (string) | Идентификатор станции |
+| `coordinates` | object | Координаты станции |
+| `coordinates.x` | int | Широта |
+| `coordinates.y` | int | Долгота |
+| `radius` | int | Радиус обслуживания (метров) |
+| `total_drone_count` | int | Общее количество дронов |
+| `total_lamps_count` | int | Общее количество фонарей |
+| `drons` | array | Массив дронов станции |
+
+**Структура дрона (`dron`):**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | UUID (string) | Идентификатор дрона |
+| `status` | string | Статус: `"in_station"`, `"fly"`, `"broken"` |
+| `last_coordinates` | object\|null | Последние координаты |
+
+> **Примечание:** Эндпоинт предназначен для подключения frontend-клиентов (веб-интерфейс, мониторинг). После начального сообщения `all_data` соединение остаётся открытым для будущих обновлений.
+
+---
+
+## 3. Drone Station (`/dron_station`)
 
 Клиент для управления станцией дронов.
 
@@ -336,6 +460,10 @@ ws://server:port/dron_station
 ```
 Клиент дрон станция/{client_id} отключился
 ```
+или
+```
+Клиент frontend/{client_id} отключился
+```
 
 ---
 
@@ -428,6 +556,37 @@ async def drone_client():
         print(f"Столбы: {response}")
 
 asyncio.run(drone_client())
+```
+
+### Python (клиент Frontend)
+
+```python
+import asyncio
+import websockets
+import json
+
+async def frontend_client():
+    async with websockets.connect("ws://localhost:8000/frontend") as ws:
+        # Получение всех данных при подключении
+        response = await ws.recv()
+        data = json.loads(response)
+        print(f"Событие: {data['event']}")
+        
+        # Доступ к данным
+        pillars = data['data']['pillars']
+        pillar_stations = data['data']['pillar_stations']
+        dron_stations = data['data']['dron_stations']
+        
+        print(f"Всего столбов: {len(pillars)}")
+        print(f"Всего станций столбов: {len(pillar_stations)}")
+        print(f"Всего станций дронов: {len(dron_stations)}")
+        
+        # Ожидание будущих обновлений (если будут реализованы)
+        # while True:
+        #     response = await ws.recv()
+        #     print(f"Обновление: {response}")
+
+asyncio.run(frontend_client())
 ```
 
 ---

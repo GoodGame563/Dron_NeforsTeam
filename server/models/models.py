@@ -75,7 +75,6 @@ class PillarStatusMessage(BaseModel):
     id_pillar: str
 
 
-
 class GetPillarsMessage(BaseModel):
     event: Literal["get_pillars"] = "get_pillars"
     pillars: List[Dict[str, Any]]
@@ -88,9 +87,10 @@ class Pillar(BaseModel):
     state: str
     pillar_station_id: str
 
+
 class DronStation(BaseModel):
     id: str
-    
+
 
 class FirstFrontendMessage(BaseModel):
     pillars: List[Pillar]

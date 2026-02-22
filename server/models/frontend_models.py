@@ -1,28 +1,30 @@
 from pydantic import BaseModel
 from .base_models import Coordinates
-from uuid import UUID
-from datetime import datetime
 from typing import List
 
+
 class Pillar(BaseModel):
-    id: UUID
+    id: str
     coordinates: Coordinates
     state: str
-    pillar_station_id: UUID
-    last_update: datetime
-    
+    pillar_station_id: str
+    last_update: str
+
+
 class PillarStation(BaseModel):
-    id: UUID
+    id: str
     coordinates: Coordinates
     is_alive: bool
 
+
 class Dron(BaseModel):
-    id: UUID
+    id: str
     status: str
     last_coordinates: Coordinates | None
 
+
 class DronStation(BaseModel):
-    id: UUID
+    id: str
     coordinates: Coordinates
     radius: int
     total_drone_count: int

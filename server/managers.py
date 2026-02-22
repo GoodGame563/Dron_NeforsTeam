@@ -28,9 +28,8 @@ from db_work import (
 
 
 class DefaultManager:
-    def __init__(self, connection_url: str):
+    def __init__(self):
         self.connections: Dict[uuid.UUID, WebSocket] = {}
-        self.db_url = connection_url
         self.dron_station_pool: asyncpg.Pool | None = None
         self.pillar_station_pool: asyncpg.Pool | None = None
 
