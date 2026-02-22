@@ -66,8 +66,8 @@ class StationManager(DefaultManager):
             await self._send_status(websocket, "Ok", "")
         self.pillar_station_pool = pool
         return _id
-    
-    async def pillar_lamp_off(self, client_id: uuid.UUID, lamp_id:str):
+
+    async def pillar_lamp_off(self, client_id: uuid.UUID, lamp_id: str):
         if self.pillar_station_pool is None:
             await self.connections[client_id].close()
             return
@@ -76,8 +76,11 @@ class StationManager(DefaultManager):
             await self._send_status(self.connections[client_id], "Ok", "")
 
         async with self.pillar_station_pool.acquire() as conn:
-            print(await get_id_dron_station_by_pillar(conn= conn, pillar_id=uuid.UUID(lamp_id)))
-
+            print(
+                await get_id_dron_station_by_pillar(
+                    conn=conn, pillar_id=uuid.UUID(lamp_id)
+                )
+            )
 
     async def dron_station_enter(self, websocket: WebSocket, client_id: str):
         pool = await asyncpg.create_pool(dsn=self.db_url)
@@ -114,17 +117,15 @@ class StationManager(DefaultManager):
             self.connections[_id] = websocket
             await self._send_status(websocket, "Ok", f"{client_id}")
         self.dron_station_pool = pool
-        return _id 
+        return _id
 
-    async def get_drones(self, client_id:uuid.UUID):
+    async def get_drones(self, client_id: uuid.UUID):
         if self.dron_station_pool is None:
             await self.connections[client_id].close()
             return
         async with self.dron_station_pool.acquire() as coon:
             drons: List[DronMessage] = []
-            for d in await get_drons_by_station(
-                conn=coon, id_dron_station=client_id
-            ):
+            for d in await get_drons_by_station(conn=coon, id_dron_station=client_id):
                 drons.append(
                     DronMessage(
                         id=str(d["id"]),
@@ -138,7 +139,7 @@ class StationManager(DefaultManager):
                 )
             await self._send_result(self.connections[client_id], "Ok", drons)
 
-    async def register_drons(self, client_id:uuid.UUID):
+    async def register_drons(self, client_id: uuid.UUID):
         if self.dron_station_pool is None:
             await self.connections[client_id].close()
             return
@@ -153,11 +154,7 @@ class StationManager(DefaultManager):
             i_drons = []
             for _ in range(
                 int(d_s["total_drone_count"])
-                - len(
-                    await get_drons_by_station(
-                        conn=coon, id_dron_station=client_id
-                    )
-                )
+                - len(await get_drons_by_station(conn=coon, id_dron_station=client_id))
             ):
                 i_drons.append(
                     str(await insert_dron(conn=coon, id_dron_station=client_id))
@@ -166,7 +163,7 @@ class StationManager(DefaultManager):
                 self.connections[client_id], "Ok", json.dumps(i_drons)
             )
 
-    async def get_pillars(self, client_id:uuid.UUID):
+    async def get_pillars(self, client_id: uuid.UUID):
         if self.dron_station_pool is None:
             await self.connections[client_id].close()
             return

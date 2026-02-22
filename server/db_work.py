@@ -129,6 +129,7 @@ async def update_pillar(
         id_pillar_station,
     )
 
+
 async def update_pillar_state(
     conn: asyncpg.Connection,
     id_: uuid.UUID,
@@ -139,6 +140,7 @@ async def update_pillar_state(
         id_,
         state,
     )
+
 
 async def exists_pillar_to_dron_station(conn: asyncpg.Connection, id_: uuid.UUID):
     return await conn.fetchval("SELECT exists_pillar_to_dron_station($1)", id_)
@@ -191,11 +193,13 @@ async def get_pillars_for_dron_station(
 
     return [dict(row) for row in rows]
 
-async def get_id_dron_station_by_pillar(
-    conn: asyncpg.Connection, pillar_id: uuid.UUID
-):
-    row = await conn.fetchval("""SELECT id_dron_station
-	FROM public.pillar_to_dron_station where id_pillar = $1 limit 1""", pillar_id)
+
+async def get_id_dron_station_by_pillar(conn: asyncpg.Connection, pillar_id: uuid.UUID):
+    row = await conn.fetchval(
+        """SELECT id_dron_station
+	FROM public.pillar_to_dron_station where id_pillar = $1 limit 1""",
+        pillar_id,
+    )
     return row
 
 
