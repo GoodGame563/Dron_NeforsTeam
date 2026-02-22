@@ -1,195 +1,119 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
-from pydantic import BaseModel
+from pydantic import ValidationError
 from typing import Literal, Dict, List, Any
-from enum import Enum
-import logging
-
+from models import ClientType, GetPillarsMessage, StatusMessage, PillarStatusMessage, RegisterMessage, EnterMessage
+from managers import ConnectionManager, DronStationManager
 app = FastAPI()
-logger = logging.getLogger()
-
-class ClientType(str, Enum):
-    DRONE = "drone_station"
-    PILLAR = "pillar_station"
-    FRONTEND = "frontend"
-
-class RegisterMessage(BaseModel):
-    event: Literal["register"] = "register"
-    client_type: ClientType
-    client_id: str | None = None
-
-class DroneStateMessage(BaseModel):
-    event: Literal["dron_state"] = "dron_state"
-    drone_id: str
-    drone_status: Literal["in_station", "fly", "broken"]
-    pilar_id: str
-    last_coordinatination: Dict[str, float]
-
-class StatusMessage(BaseModel):
-    event: Literal["status"] = "status"
-    status: Literal["Ok", "Err"]
-    message: str = ""
-
-class PillarStatusMessage(BaseModel):
-    event: Literal["pillar_status"] = "pillar_status"
-    id_pillar: str
-
-class GetPillarsMessage(BaseModel):
-    event: Literal["get_pillars"] = "get_pillars"
-    pillars: List[Dict[str, Any]]
-
-class ConnectionManager:
-    def __init__(self):
-        self.drones: Dict[str, WebSocket] = {}
-        self.pillars: Dict[str, WebSocket] = {}
-        self.frontends: List[WebSocket] = []
 
 
-        self.pillar_info: Dict[str, dict] = {
-            "pillar1": {"x": 55.751244, "y": 37.618423},
-            "pillar2": {"x": 55.755, "y": 37.62},
-            "pillar3": {"x": 55.76, "y": 37.63},
-        }
-        self.drone_states: Dict[str, dict] = {}
 
-    async def register(self, websocket: WebSocket, client_type: ClientType, client_id: str | None):
 
-        if client_type == ClientType.PILLAR:
-            if not client_id:
-                await self._send_status(websocket, "Err", "client_id обязателен для pillar")
-                await websocket.close()
-                return
-            self.pillars[client_id] = websocket
-            await self._send_pillars(websocket)
+manager = DronStationManager('postgresql://drone_admin:12345678@localhost:5432/base')
 
-        elif client_type == ClientType.DRONE:
-            if not client_id:
-                await self._send_status(websocket, "Err", "client_id обязателен для drone")
-                await websocket.close()
-                return
-            self.drones[client_id] = websocket
+# @app.websocket("/ws")
+# async def websocket_endpoint(websocket: WebSocket):
+#     client_type: str | None = None
+#     client_id: str | None = None
+#     await websocket.accept()
+#     try:
+#         data = await websocket.receive_json()
+#         if data.get("event") != "register":
+#             await websocket.send_json(StatusMessage(status="Err", message="Первое сообщение должно быть register").model_dump())
+#             await websocket.close(code=1003)
+#             return
 
-        elif client_type == ClientType.FRONTEND:
-            self.frontends.append(websocket)
-            await self._send_pillars(websocket)             
+#         reg = RegisterMessage(**data)
+#         client_type = reg.client_type.value
+#         client_id = reg.client_id
 
-        await self._send_status(websocket, "Ok", f"{client_type} успешно подключён")
+#         await manager.register(websocket, reg.client_type, client_id)
 
-    async def _send_pillars(self, websocket: WebSocket):
-        pillars_list = [
-            {"id": pid, "x": info["x"], "y": info["y"]}
-            for pid, info in self.pillar_info.items()
-        ]
-        await websocket.send_json(GetPillarsMessage(pillars=pillars_list).model_dump())
+#         while True:
+#             data = await websocket.receive_json()
+#             event = data.get("event")
+#             # if event == "status":
+#             #     logger.info(f"Клиент {client_type}/{client_id} ответил статусом: {data}")
+#             #     continue
 
-    async def _send_status(
-        self, 
-        websocket: WebSocket, 
-        status: Literal["Ok", "Err"],  
-        message: str
-    ):
-        await websocket.send_json(
-            StatusMessage(status=status, message=message).model_dump()
-        )
+#             # if event == "dron_state" and client_type == "drone":
+#             #     try:
+#             #         state = DroneStateMessage(**data)
+#             #         manager.drone_states[state.drone_id] = data
 
-    async def broadcast_to_frontends(self, message: dict):
-        dead = []
-        for ws in self.frontends:
-            try:
-                await ws.send_json(message)
-            except Exception:
-                dead.append(ws)
-        for d in dead:
-            if d in self.frontends:
-                self.frontends.remove(d)
+#             #         await manager._send_status(websocket, "Ok", "Состояние сохранено")
 
-    async def broadcast_pillar_status(self, pillar_id: str):
-        msg = PillarStatusMessage(id_pillar=pillar_id).model_dump()
+#             #         await manager.broadcast_to_frontends(data)
 
-        await self.broadcast_to_frontends(msg)
 
-        for ws in list(self.drones.values()):
-            try:
-                await ws.send_json(msg)
-            except:
-                pass
+#             #         if state.drone_status == "broken":
+#             #             await manager.broadcast_pillar_status(state.pilar_id)
 
-        for ws in list(self.pillars.values()):
-            try:
-                await ws.send_json(msg)
-            except:
-                pass
+#             #     except Exception as e:
+#             #         await manager._send_status(websocket, "Err", str(e))
 
-    async def remove_connection(self, websocket: WebSocket, client_type: str | None, client_id: str | None):
-        if client_type == "drone" and client_id:
-            self.drones.pop(client_id, None)
-        elif client_type == "pillar" and client_id:
-            self.pillars.pop(client_id, None)
-        elif client_type == "frontend":
-            if websocket in self.frontends:
-                self.frontends.remove(websocket)
+#             # else:
+#             #     await manager._send_status(websocket, "Err", f"Неизвестное событие: {event}")
 
-manager = ConnectionManager()
+#     except WebSocketDisconnect:
+#         print(f"Клиент {client_type}/{client_id} отключился")
+#     except Exception as e:
+#         print(f"Ошибка WebSocket: {e}")
+#     finally:
+#         await manager.remove_connection(websocket, client_type, client_id)
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    client_type: str | None = None
+@app.websocket("/dron_station")
+async def websocket_endpoint_dron_station(websocket: WebSocket):
+
+    client_type = ClientType.DRONE_STATION
     client_id: str | None = None
     await websocket.accept()
     try:
         data = await websocket.receive_json()
-        if data.get("event") != "register":
-            await websocket.send_json(StatusMessage(status="Err", message="Первое сообщение должно быть register").model_dump())
+        type_event = data.get("event")
+        if type_event != "register" and type_event != "enter":
+            await websocket.send_json(StatusMessage(status="Err", message="First message must be register or enter").model_dump())
             await websocket.close(code=1003)
             return
-
-        reg = RegisterMessage(**data)
-        client_type = reg.client_type.value
-        client_id = reg.client_id
-
-        await manager.register(websocket, reg.client_type, client_id)
+        if type_event == "enter":
+            ent = EnterMessage(**data)
+            client_id = await manager.enter(websocket, ent.client_id)
+        else:
+            reg = RegisterMessage(**data)
+            client_id = await manager.register(websocket, reg)
+        if client_id is None: 
+            return
 
         while True:
             data = await websocket.receive_json()
             event = data.get("event")
-            if event == "status":
-                logger.info(f"Клиент {client_type}/{client_id} ответил статусом: {data}")
-                continue
-
-            if event == "dron_state" and client_type == "drone":
-                try:
-                    state = DroneStateMessage(**data)
-                    manager.drone_states[state.drone_id] = data
-
-                    await manager._send_status(websocket, "Ok", "Состояние сохранено")
-
-                    await manager.broadcast_to_frontends(data)
-
-
-                    if state.drone_status == "broken":
-                        await manager.broadcast_pillar_status(state.pilar_id)
-
-                except Exception as e:
-                    await manager._send_status(websocket, "Err", str(e))
-
-            else:
-                await manager._send_status(websocket, "Err", f"Неизвестное событие: {event}")
+            match event:
+                case "register_drons":
+                    await manager.register_drons()
+                case "get_drons":
+                    await manager.get_drones()
+                case "get_pillars":
+                    await manager.get_pillars()
+                case _:
+                    pass
 
     except WebSocketDisconnect:
-        logger.info(f"Клиент {client_type}/{client_id} отключился")
+        print(f"Клиент {client_type}/{client_id} отключился")
+    except ValidationError as exc:
+        await websocket.send_json(StatusMessage(status="Err", message="You lost fields").model_dump())
+        print(exc)
     except Exception as e:
-        logger.error(f"Ошибка WebSocket: {e}")
+        print(f"Ошибка WebSocket: {e}")
     finally:
-        await manager.remove_connection(websocket, client_type, client_id)
+        await manager.remove_connection(client_id)
 
+# @app.post("/break_pillar/{pillar_id}")
+# async def break_pillar(pillar_id: str):
+#     """Искусственно ломаем столб — сервер отправляет pillar_status всем клиентам"""
+#     if pillar_id not in manager.pillar_info:
+#         raise HTTPException(status_code=404, detail="Столб не найден")
 
-@app.post("/break_pillar/{pillar_id}")
-async def break_pillar(pillar_id: str):
-    """Искусственно ломаем столб — сервер отправляет pillar_status всем клиентам"""
-    if pillar_id not in manager.pillar_info:
-        raise HTTPException(status_code=404, detail="Столб не найден")
-
-    await manager.broadcast_pillar_status(pillar_id)
-    return {"status": "Ok", "message": f"Уведомление о поломке столба {pillar_id} отправлено всем клиентам"}
+#     await manager.broadcast_pillar_status(pillar_id)
+#     return {"status": "Ok", "message": f"Уведомление о поломке столба {pillar_id} отправлено всем клиентам"}
 
 
 # if __name__ == "__main__":
