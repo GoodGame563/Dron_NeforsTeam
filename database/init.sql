@@ -205,6 +205,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION update_pillar_state(
+    p_id UUID, 
+    p_state pillar_state
+) RETURNS VOID AS $$
+BEGIN
+    UPDATE pillars 
+    SET state = p_state 
+    WHERE id = p_id;
+END;
+$$ LANGUAGE plpgsql;
+
 
 CREATE OR REPLACE FUNCTION exists_pillar_to_dron_station(p_id UUID) RETURNS BOOLEAN AS $$
 BEGIN
