@@ -34,7 +34,7 @@ public class Drone : MonoBehaviour
     public Vector3 TargetCoordinates;
     public Vector3 CurrentLampCoord;
 
-    public int ID { get; private set; }
+    public string ID { get; private set; }
 
     public float BatteryChargeLevel { get; private set; }
 
@@ -52,13 +52,15 @@ public class Drone : MonoBehaviour
     [SerializeField] private float _stopDistance = 0.1f; // Дистанция для остановки
     [SerializeField] private float _hoverHeightTolerance = 00f; // Допуск по высоте для зависания
 
-    public event Action<int> OnDroneChargetEnought;
-    public event Action<int> OnDroneReachedTarget; // Событие достижения цели
-    public event Action<int> OnDroneAtHome; // Событие достижения цели
-    public event Action<int, FlightSubState> OnFlightStateChanged; // Событие изменения состояния полета
+    public event Action<string> OnDroneChargetEnought;
+    public event Action<string> OnDroneReachedTarget; // Событие достижения цели
+    public event Action<string> OnDroneNeedChangingLamp; // Событие достижения цели
+    public event Action<string, FlightSubState> OnFlightStateChanged; // Событие изменения состояния полета
 
-    public event Action<int> OnTakingBrokenAnimEnded;
-    public event Action<int> OnTakingWorkingAnimEnded;
+    public event Action<string> OnDroneReady;
+
+    public event Action<string> OnTakingBrokenAnimEnded;
+    public event Action<string> OnTakingWorkingAnimEnded;
 
     private Coroutine _flightCoroutine;
     private Coroutine _hoverCoroutine;
@@ -68,7 +70,7 @@ public class Drone : MonoBehaviour
 
     private Animator _anim;
 
-    public void Initialize(int newId, Vector3 stationCoordinates)
+    public void Initialize(string newId, Vector3 stationCoordinates)
     {
         _stationCoordinates = stationCoordinates;
         ID = newId;
@@ -126,15 +128,22 @@ public class Drone : MonoBehaviour
     public void TakeWorkingLamp()
     {
         _anim.SetTrigger("ChangeLamp");
+        IsHasBrokenLamp = false;
     }
 
-    public void OnTakeWorkingLampAnimEnded()
+    public void OnChangeWorkingLampAnimEnded()
     {
         SetTarget(CurrentLampCoord);
+        
         Launch();
     }
 
     public void OnTakeBrokenLampAnimEnded()
+    {
+        OnTakingBrokenAnimEnded?.Invoke(ID);
+    }
+
+    public void OnChangingLampAnimEnded()
     {
         OnTakingBrokenAnimEnded?.Invoke(ID);
     }
@@ -175,7 +184,15 @@ public class Drone : MonoBehaviour
 
         if (_isGoHome)
         {
-            OnDroneAtHome?.Invoke(ID);
+            if (IsHasBrokenLamp)
+            {
+                OnDroneNeedChangingLamp?.Invoke(ID);
+            }
+            else
+            {
+                OnDroneReady?.Invoke(ID);
+                //здесь он должен начать ждать
+            }
         }
         else
         {
@@ -228,6 +245,7 @@ public class Drone : MonoBehaviour
             targetHeight = _lampHeight;
         }else
         {
+            //height of drone-station
             targetHeight = 5f;
         }
         Vector3 targetPosition = new Vector3(TargetCoordinates.x, targetHeight, TargetCoordinates.z);
@@ -272,7 +290,7 @@ public class Drone : MonoBehaviour
         float journeyLength = Vector3.Distance(startPosition, targetPosition);
         float startTime = Time.time;
 
-        while (Vector3.Distance(transform.position, targetPosition) > 0.1f)
+        while (Mathf.Abs(Vector3.Distance(transform.position, targetPosition)) > 0.5f)
         {
             float distanceCovered = (Time.time - startTime) * _flightSpeed;
             float fractionOfJourney = distanceCovered / journeyLength;

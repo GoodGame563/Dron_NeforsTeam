@@ -87,20 +87,29 @@ public class Pillar : MonoBehaviour
         //так же мен€ть материалы дл€ визуализации и прочее
     }
 
-    private void SendToHome(int id)
+    private void SendToHome(string id)
     {
         _currentDrone.OnTakingBrokenAnimEnded -= SendToHome;
         _currentDrone.GoHome();
         _anim.CloseDroneLocator();
-
+        _currentDrone.OnDroneReachedTarget += StartSettingNewLamp;
     }
 
-    private void StartTakingLampAnim(int droneID)
+    private void StartSettingNewLamp(string droneID)
+    {
+        _currentDrone.StartRepairAnimation(true);
+        _currentDrone.OnDroneReachedTarget -= StartSettingNewLamp;
+        Debug.Log($"Drone {_currentDrone.ID} set new lamp to Pillar ({ID})");
+        _isHasLamp = true;
+        _currentDrone.OnTakingBrokenAnimEnded += SendToHome;
+    }
+
+    private void StartTakingLampAnim(string droneID)
     {
         _currentDrone.StartRepairAnimation(false);
         _currentDrone.OnDroneReachedTarget -= StartTakingLampAnim;
         Debug.Log($"Drone {_currentDrone.ID} start repair Pillar ({ID})");
-        _isHasLamp = true;
+        _isHasLamp = false;
         _currentDrone.OnTakingBrokenAnimEnded += SendToHome;
 
     }

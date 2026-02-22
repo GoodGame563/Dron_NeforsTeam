@@ -2190,6 +2190,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 662c84777abbeee458588ace380daf07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Pillar
+--- !u!1 &946644752 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6230746135075968443, guid: 8d7f826ea500155419cf865c4e2aec32, type: 3}
+  m_PrefabInstance: {fileID: 741838067203526738}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &967436626
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2460,12 +2465,37 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8237088442730080720, guid: 8d7f826ea500155419cf865c4e2aec32, type: 3}
   m_PrefabInstance: {fileID: 741838067203526738}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 946644752}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: caa547a27d687764cb10f533fbe868d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DocStation
+--- !u!114 &1123266454
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 946644752}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4da45e758252244f8ca9b1b3d9c7d61, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DroneStationClient
+--- !u!114 &1123266455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 946644752}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b063fd286c05cb24994839d05aa38485, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WSServer
+  url: ws://lavelle-forestal-foursquarely.ngrok-free.dev/dron_station
 --- !u!1 &1131066658
 GameObject:
   m_ObjectHideFlags: 0
@@ -5028,6 +5058,10 @@ PrefabInstance:
       propertyPath: _heightSpeed
       value: 20
       objectReference: {fileID: 0}
+    - target: {fileID: 4410487913853168534, guid: 0a899dec8616c8b45b43a1938743b235, type: 3}
+      propertyPath: _hoverHeightTolerance
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 5675769669309432197, guid: 0a899dec8616c8b45b43a1938743b235, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -5176,10 +5210,17 @@ PrefabInstance:
       propertyPath: '_pillarStations.Array.data[3]'
       value: 
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5530027837626298080, guid: 8d7f826ea500155419cf865c4e2aec32, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6230746135075968443, guid: 8d7f826ea500155419cf865c4e2aec32, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1123266455}
+    - targetCorrespondingSourceObject: {fileID: 6230746135075968443, guid: 8d7f826ea500155419cf865c4e2aec32, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1123266454}
   m_SourcePrefab: {fileID: 100100000, guid: 8d7f826ea500155419cf865c4e2aec32, type: 3}
 --- !u!1001 &1436753659171811030
 PrefabInstance:

@@ -22,14 +22,11 @@ public class PillarDebug : MonoBehaviour
     public void BrokePillar(int id)
     {
         System.Random rand = new();
+
         id = rand.Next(0, _pillars.Count);
-
-        if (id >= _pillars.Count)
+        if (_pillars[id].CurrentState != Pillar.PillarState.Broken)
         {
-            Debug.LogError("There is no pillar with thid id");
-            return;
+            _pillars[id].SetBrokenState();
         }
-
-        _pillars[id].SetBrokenState();
     }
 }

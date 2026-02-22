@@ -1,12 +1,17 @@
-using UnityEngine;
+using Models;
 using System.Collections.Generic;
 using TMPro;
+using UnityEditor.Experimental.GraphView;
+using UnityEngine;
 
+[RequireComponent(typeof(DroneStationClient))]
 public class DronesStation : MonoBehaviour
 {
     [SerializeField] private List<Drone> _drones;
     [SerializeField] private List<PillarStation> _pillarStations;
-    
+
+    private DroneStationClient _client;
+
     public int DronesCount { get => _drones.Count; }
 
     public int BrokenDronesCount { get; private set; }
@@ -15,7 +20,51 @@ public class DronesStation : MonoBehaviour
 
     private Queue<Vector3> _brokenPillarsQueue = new();
 
+    private string _id;
+    private List<string> _dronesList;
+
     private bool _isSubscribetToDrones;
+
+    private void Start()
+    {
+        _client = GetComponent<DroneStationClient>();
+
+        if (_id == null)
+        {
+            _client.RegisterStation(new Models.RegisterMessage()
+            {
+                Event = "register",
+                Coordinates = new Coordinates()
+                {
+                    Latitude = transform.position.x,
+                    Longtiude = transform.position.z
+                },
+                Radius = 1000,
+                TotalDroneCount = 2,
+                TotalLampsCount = -1
+
+            });
+        }
+    }
+
+    private void OnEnable()
+    {
+        _client.OnRegisterStationResponse += RegisterStationResponse;
+    }
+
+    #region Client
+
+    private void RegisterStationResponse(string uuid)
+    {
+        _id = uuid;
+    }
+        
+    private void RegisterDrones(List<string> dronesList)
+    {
+        _dronesList = dronesList;
+    }
+
+    #endregion
 
     public void Initialize()
     {
@@ -31,11 +80,11 @@ public class DronesStation : MonoBehaviour
 
 
         int newId = 0;
-        foreach (Drone drone in _drones)
+        for (int i = 0; i < _dronesList.Count; i++)
         {
-            drone.Initialize(newId, transform.position);
-            newId++;
+            _drones[i].Initialize(_dronesList[i], transform.position);
         }
+
     }
 
     public void SayAboutBrokenPillar(string id)
@@ -78,23 +127,42 @@ public class DronesStation : MonoBehaviour
         droneToFly.SetTarget(targetPillarPosition);
         droneToFly.SetHeight(20f);
         droneToFly.Launch();
-        droneToFly.OnDroneAtHome += DroneReturned;
+        droneToFly.OnDroneNeedChangingLamp += DroneReturned;
     }
 
-    private void DroneReturned(int ID)
+    private void DroneReturned(string ID)
     {
-        Drone drone = _drones[ID];
+        Drone drone = GetDroneByID(ID);
+
+
+
         if (drone.IsHasBrokenLamp)
         {
             drone.TakeWorkingLamp();
+            
         }
     }
 
-    private void DroneReady(int droneID)
+    private Drone GetDroneByID(string ID)
     {
+        foreach (var item in _drones)
+        {
+            if (item.ID == ID)
+            {
+                return item;
+            }
+        }
+        return null;
+    }
+    private void DroneReady(string droneID)
+    {
+        Debug.LogError("Drone ready");
+        Debug.LogError("Drone ready");
+        Debug.LogError("Drone ready");
 
-        _drones[droneID].OnDroneChargetEnought -= DroneReady;
-        _drones[droneID].OnDroneAtHome -= DroneReady;
+        Drone drone = GetDroneByID(droneID);
+        drone.OnDroneChargetEnought -= DroneReady;
+        drone.OnDroneNeedChangingLamp -= DroneReady;
 
         Vector3 brokenPillarPos = _brokenPillarsQueue.Peek();
 
