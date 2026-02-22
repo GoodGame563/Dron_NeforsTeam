@@ -1,24 +1,42 @@
 using NativeWebSocket;
 using System;
-using System.Net.WebSockets;
+using System.Threading.Tasks;
 using UnityEngine;
 
-public class WsClient : MonoBehaviour
+public class WSServer : MonoBehaviour
 {
     [SerializeField] private string url = "ws://localhost:8080";
-    [SerializeField] private float reconnectDelay = 3f;
 
     private WebSocket _ws;
-    private bool _isReconnecting;
 
-    public event Action OnConnected;
-    public event Action OnDisconnected;
-    public event Action<string> OnMessageReceived;
-    public event Action<string> OnError;
+    public Action<string> OnMessageReceive;
 
     private async void Start()
     {
-        await Connect();
+        _ws = new WebSocket(url);
+
+        _ws.OnOpen += () =>
+        {
+            Debug.Log("[WsClient] Connected");
+        };
+
+        _ws.OnClose += (code) =>
+        {
+            Debug.Log($"[WsClient] Disconnected: {code}");
+        };
+
+        _ws.OnError += (error) =>
+        {
+            Debug.LogError($"[WsClient] Error: {error}");
+        };
+
+        _ws.OnMessage += (bytes) =>
+        {
+            string message = System.Text.Encoding.UTF8.GetString(bytes);
+            OnMessageReceive?.Invoke(message);
+        };
+
+        await _ws.Connect();
     }
 
     private void Update()
@@ -30,46 +48,11 @@ public class WsClient : MonoBehaviour
 
     private async void OnDestroy()
     {
-        _isReconnecting = false;
         if (_ws != null)
             await _ws.Close();
     }
 
-    private async void Connect()
-    {
-        if (_isReconnecting) return;
-
-        _ws = new WebSocket(url);
-
-        _ws.OnOpen += () =>
-        {
-            Debug.Log("[WsClient] Connected");
-            OnConnected?.Invoke();
-        };
-
-        _ws.OnClose += (code) =>
-        {
-            Debug.Log($"[WsClient] Disconnected: {code}");
-            OnDisconnected?.Invoke();
-            TryReconnect();
-        };
-
-        _ws.OnError += (error) =>
-        {
-            Debug.LogError($"[WsClient] Error: {error}");
-            OnError?.Invoke(error);
-        };
-
-        _ws.OnMessage += (bytes) =>
-        {
-            string message = System.Text.Encoding.UTF8.GetString(bytes);
-            OnMessageReceived?.Invoke(message);
-        };
-
-        await _ws.Connect();
-    }
-
-    public async void Send(string message)
+    public async Task Send(string message)
     {
         if (_ws == null || _ws.State != WebSocketState.Open)
         {
@@ -78,17 +61,5 @@ public class WsClient : MonoBehaviour
         }
 
         await _ws.SendText(message);
-    }
-
-    private async void TryReconnect()
-    {
-        if (_isReconnecting) return;
-        _isReconnecting = true;
-
-        Debug.Log($"[WsClient] Reconnecting in {reconnectDelay}s...");
-        await System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(reconnectDelay));
-
-        _isReconnecting = false;
-        Connect();
     }
 }
