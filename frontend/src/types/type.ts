@@ -1,26 +1,24 @@
 export type LampStatus = "alive" | "death" | "empty";
-export type DroneStatus = "available" | "busy" | "broken";
 
-export interface Lamp {
+export type Coordinates = {
+  x: number;
+  y: number;
+};
+
+export type Lamp = {
   id: string;
-  stationId: string;
-  position: { x: number; y: number };
+  stationId: string | null;
+  coordinates: Coordinates;
   status: LampStatus;
   updatedAt: Date;
-}
+};
 
-export interface Drone {
-  id: string;
-  stationId: string;
-  status: DroneStatus;
-}
-
-export interface Station {
+export type Station = {
   id: string;
   name: string;
-  position: { x: number; y: number };
+  coordinates: Coordinates;
   totalDrones: number;
   availableDrones: number;
   brokenDrones: number;
   lampCount: number;
-}
+};

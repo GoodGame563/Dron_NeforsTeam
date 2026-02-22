@@ -1,33 +1,6 @@
-import { Box, Typography, Divider } from "@mui/material";
+import { Typography, Box, Divider } from "@mui/material";
 
-import { useSocketStore } from "../../stores/socketStore";
-import { StationCard } from "./StationCard";
-import type { Station } from "../../types/type.ts";
-
-export function StationList() {
-  const { stations, selectedStationId, setSelectedStationId, unselectStation } =
-    useSocketStore((state) => ({
-      stations: state.stations,
-      selectedStationId: state.selectedStationId,
-      setSelectedStationId: state.setSelectedStationId,
-      unselectStation: state.unselectStation,
-    }));
-
-  function handleSelect(station: Station) {
-    if (selectedStationId === station.id) {
-      unselectStation();
-    } else {
-      setSelectedStationId(station.id);
-    }
-  }
-
-  const totalDrones = stations.reduce((sum, s) => sum + s.totalDrones, 0);
-  const availableDrones = stations.reduce(
-    (sum, s) => sum + s.availableDrones,
-    0,
-  );
-  const brokenDrones = stations.reduce((sum, s) => sum + s.brokenDrones, 0);
-
+export function LampList() {
   return (
     <Box
       sx={{
@@ -55,7 +28,7 @@ export function StationList() {
         >
           <Box>
             <Typography variant="h6" fontWeight={600}>
-              {totalDrones}
+              0
             </Typography>
             <Typography variant="caption" color="text.secondary">
               всего
@@ -63,7 +36,7 @@ export function StationList() {
           </Box>
           <Box>
             <Typography variant="h6" fontWeight={600} color="success.main">
-              {availableDrones}
+              0
             </Typography>
             <Typography variant="caption" color="text.secondary">
               свободно
@@ -71,7 +44,7 @@ export function StationList() {
           </Box>
           <Box>
             <Typography variant="h6" fontWeight={600} color="error.main">
-              {brokenDrones}
+              10
             </Typography>
             <Typography variant="caption" color="text.secondary">
               сломано
@@ -98,28 +71,17 @@ export function StationList() {
           color="text.disabled"
           sx={{ textTransform: "uppercase", letterSpacing: 1.5, px: 0.5 }}
         >
-          Станции ({stations.length})
+          Станции (0)
         </Typography>
 
-        {stations.length === 0 ? (
-          <Typography
-            variant="body2"
-            color="text.disabled"
-            textAlign="center"
-            sx={{ py: 4 }}
-          >
-            Нет станций
-          </Typography>
-        ) : (
-          stations.map((station) => (
-            <StationCard
-              key={station.id}
-              station={station}
-              selected={selectedStationId === station.id}
-              onSelect={handleSelect}
-            />
-          ))
-        )}
+        <Typography
+          variant="body2"
+          color="text.disabled"
+          textAlign="center"
+          sx={{ py: 4 }}
+        >
+          Нет станций
+        </Typography>
       </Box>
     </Box>
   );

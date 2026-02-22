@@ -5,16 +5,57 @@ import {
   Chip,
   Typography,
   Box,
+  Tooltip,
 } from "@mui/material";
 import { Bolt, Build, FlightTakeoff } from "@mui/icons-material";
-
-import { StatItem } from "./StatItem.tsx";
 import type { Station } from "../../types/type.ts";
 
 interface StationCardProps {
   station: Station;
   selected: boolean;
   onSelect: (station: Station) => void;
+}
+
+interface StatItemProps {
+  icon: React.ReactNode;
+  value: number;
+  label: string;
+  color: string;
+}
+
+function StatItem({ icon, value, label, color }: StatItemProps) {
+  return (
+    <Tooltip title={label} placement="top">
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 0.5,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color }}>
+          {icon}
+          <Typography
+            variant="body2"
+            fontWeight={600}
+            color={color}
+            lineHeight={1}
+          >
+            {value}
+          </Typography>
+        </Box>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          fontSize={10}
+          lineHeight={1}
+        >
+          {label}
+        </Typography>
+      </Box>
+    </Tooltip>
+  );
 }
 
 export function StationCard({ station, selected, onSelect }: StationCardProps) {
@@ -33,6 +74,7 @@ export function StationCard({ station, selected, onSelect }: StationCardProps) {
         sx={{ borderRadius: "inherit" }}
       >
         <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+          {/* Заголовок */}
           <Box
             sx={{
               display: "flex",
@@ -72,6 +114,7 @@ export function StationCard({ station, selected, onSelect }: StationCardProps) {
             />
           </Box>
 
+          {/* Статистика дронов */}
           <Box
             sx={{
               display: "grid",

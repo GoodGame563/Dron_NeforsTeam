@@ -6,24 +6,9 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import {
-  Lightbulb,
-  LightbulbOff,
-  CircleOff,
-  X,
-  Send,
-  Clock,
-} from "lucide-react";
-import type { Lamp, Station, LampStatus } from "../../types/type";
+import { X, Send, Clock } from "lucide-react";
+import type { LampStatus } from "../../types/type";
 import { formatRelativeTime } from "../../utils/formatRelativeTime";
-
-interface LampDetailPanelProps {
-  lamp: Lamp;
-  station: Station | null;
-  isDispatching: boolean;
-  onDispatch: () => void;
-  onClose: () => void;
-}
 
 const STATUS_CONFIG: Record<
   LampStatus,
@@ -37,19 +22,7 @@ const STATUS_CONFIG: Record<
   empty: { label: "Нет лампы", color: "default" },
 };
 
-function LampIcon({ status }: { status: LampStatus }) {
-  if (status === "alive") return <Lightbulb size={20} color="#34d399" />;
-  if (status === "death") return <LightbulbOff size={20} color="#f87171" />;
-  return <CircleOff size={20} color="rgba(255,255,255,0.3)" />;
-}
-
-export function LampDetailPanel({
-  lamp,
-  station,
-  isDispatching,
-  onDispatch,
-  onClose,
-}: LampDetailPanelProps) {
+export function LampDetailPanel() {
   const { label, color } = STATUS_CONFIG[lamp.status];
   const canDispatch = lamp.status === "death" || lamp.status === "empty";
   const hasAvailableDrone = station ? station.availableDrones > 0 : false;
