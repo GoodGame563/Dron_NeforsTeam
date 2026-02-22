@@ -8,7 +8,7 @@ from models import (
     DronMessage,
     Coordinates,
     SendMessage,
-    PillarMessage,
+    Pillar,
 )
 from fastapi import WebSocket
 import asyncpg
@@ -183,7 +183,7 @@ class StationManager(DefaultManager):
             pillars = []
             for p in p_d_s:
                 pillars.append(
-                    PillarMessage(
+                    Pillar(
                         pillar_id=str(p["pillar_id"]),
                         x=p["x"],
                         y=p["y"],

@@ -1,10 +1,13 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
-from models import StatusMessage, RegisterMessage, EnterMessage
+from models import StatusMessage, RegisterMessage, EnterMessage, GreetingMessage, BaseMessage
 from managers import StationManager
 import uuid
+import uvicorn
 
-app = FastAPI()
+app = FastAPI(
+    version="0.2.0",
+)
 
 
 manager = StationManager("postgresql://drone_admin:12345678@localhost:5432/base")
@@ -101,16 +104,61 @@ async def websocket_endpoint_dron_station(websocket: WebSocket):
     finally:
         await manager.remove_connection(client_id)
 
+@app.websocket("/frontend")
+async def websocket_endpoint_frontend(websocket: WebSocket):
+    client_id: uuid.UUID | None = None
+    await websocket.accept()
+    try:
 
-# @app.post("/break_pillar/{pillar_id}")
-# async def break_pillar(pillar_id: str):
-#     """Искусственно ломаем столб — сервер отправляет pillar_status всем клиентам"""
-#     if pillar_id not in manager.pillar_info:
-#         raise HTTPException(status_code=404, detail="Столб не найден")
+        # await websocket.send_json(
+        #         BaseMessage(
+        #             event="all_data",
+        #             data=GreetingMessage(
 
-#     await manager.broadcast_pillar_status(pillar_id)
-#     return {"status": "Ok", "message": f"Уведомление о поломке столба {pillar_id} отправлено всем клиентам"}
+        #             )
+        #         ).model_dump()
+        #     )
+        data = await websocket.receive_json()
+        type_event = data.get("event")
+        if type_event != "register" and type_event != "enter":
+            await websocket.send_json(
+                StatusMessage(
+                    status="Err", message="First message must be register or enter"
+                ).model_dump()
+            )
+            await websocket.close(code=1003)
+            return
+        if type_event == "enter":
+            ent = EnterMessage(**data)
+            client_id = await manager.dron_station_enter(websocket, ent.client_id)
+        else:
+            reg = RegisterMessage(**data)
+            client_id = await manager.dron_station_register(websocket, reg)
+        if client_id is None:
+            return
 
+        while True:
+            data = await websocket.receive_json()
+            event = data.get("event")
+            match event:
+                case "register_drons":
+                    await manager.register_drons(client_id)
+                case "get_drons":
+                    await manager.get_drones(client_id)
+                case "get_pillars":
+                    await manager.get_pillars(client_id)
+                case _:
+                    pass
 
-# if __name__ == "__main__":
-#     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    except WebSocketDisconnect:
+        print(f"Клиент дрон станция/{client_id} отключился")
+    except ValidationError as exc:
+        await websocket.send_json(
+            StatusMessage(status="Err", message="You lost fields").model_dump()
+        )
+        print(exc)
+    except Exception as e:
+        print(f"Ошибка WebSocket: {e}")
+    finally:
+        await manager.remove_connection(client_id)
+
