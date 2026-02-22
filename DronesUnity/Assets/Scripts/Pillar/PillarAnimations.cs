@@ -5,6 +5,10 @@ public class PillarAnimations : MonoBehaviour
     [SerializeField] private Animator _lampAnimator;
     [SerializeField] private Animator _pillarAnimator;
 
+    public void TurnON(){
+_lampAnimator.SetBool("TurnON", true);
+}
+
     public void BrokeLamp()
     {
         _lampAnimator.SetBool("Broken", true);
@@ -17,11 +21,11 @@ public class PillarAnimations : MonoBehaviour
 
     public void OpenDroneLocator()
     {
-        _pillarAnimator.SetBool("LocatorOpened", true);
+        _pillarAnimator.SetBool("Migling", true);
     }
 
     public void CloseDroneLocator()
     {
-        _pillarAnimator.SetBool("LocatorOpened", false);
+        _pillarAnimator.SetBool("Migling", false);
     }
 }

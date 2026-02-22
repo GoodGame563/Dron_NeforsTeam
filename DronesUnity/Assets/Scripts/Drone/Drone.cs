@@ -23,6 +23,7 @@ public class Drone : MonoBehaviour
         TakingOff,      // Взлет
         Hovering,       // Зависание
         Moving,         // Движение к цели
+        Descending,     // Спуск к лампе
         Landing         // Посадка
     }
 
@@ -30,32 +31,42 @@ public class Drone : MonoBehaviour
     public FlightSubState CurrentFlightState { get; private set; }
     public DroneLampHolderState CurrentLampHolderState { get; private set; }
 
+    public Vector3 TargetCoordinates;
+    public Vector3 CurrentLampCoord;
+
     public int ID { get; private set; }
 
     public float BatteryChargeLevel { get; private set; }
 
     private Rigidbody _rb;
 
-    private Vector3 _targetCoordinates;
+
     private Vector3 _stationCoordinates;
 
-    private float _requiredHeight;
+    private float _reservedFlyHight;
+    private float _lampHeight = 11.861f;
 
     [Header("Настройки полета")]
     [SerializeField] private float _flightSpeed = 5f; // Скорость полета
     [SerializeField] private float _heightSpeed = 5f; // Скорость набора высоты
     [SerializeField] private float _stopDistance = 0.1f; // Дистанция для остановки
-    [SerializeField] private float _hoverHeightTolerance = 0.5f; // Допуск по высоте для зависания
+    [SerializeField] private float _hoverHeightTolerance = 00f; // Допуск по высоте для зависания
 
     public event Action<int> OnDroneChargetEnought;
     public event Action<int> OnDroneReachedTarget; // Событие достижения цели
     public event Action<int> OnDroneAtHome; // Событие достижения цели
     public event Action<int, FlightSubState> OnFlightStateChanged; // Событие изменения состояния полета
 
+    public event Action<int> OnTakingBrokenAnimEnded;
+    public event Action<int> OnTakingWorkingAnimEnded;
+
     private Coroutine _flightCoroutine;
     private Coroutine _hoverCoroutine;
     private bool _isHovering = false;
     private bool _isGoHome;
+    public bool IsHasBrokenLamp { get; private set; }
+
+    private Animator _anim;
 
     public void Initialize(int newId, Vector3 stationCoordinates)
     {
@@ -64,6 +75,9 @@ public class Drone : MonoBehaviour
         _rb = GetComponent<Rigidbody>();
         CurrentDroneState = DronState.Charging;
         CurrentFlightState = FlightSubState.Hovering; // Начальное состояние - зависание на земле
+
+        _anim = GetComponent<Animator>();
+        Debug.Log($"Drone {ID} Initialized");
     }
 
     public void Launch()
@@ -85,9 +99,44 @@ public class Drone : MonoBehaviour
 
     public void GoHome()
     {
-        SetTarget(_stationCoordinates);
+        Vector3 stationPos = new(_stationCoordinates.x, _stationCoordinates.y, _stationCoordinates.z);
+        SetTarget(stationPos, false);
         Launch();
         Debug.LogWarning($"Drone ({ID}) go home");
+        _anim.applyRootMotion = true;
+    }
+
+    public void StartRepairAnimation(bool isHasLamp)
+    {
+        if (isHasLamp)
+        {
+            _anim.SetTrigger("SetLamp");
+
+            IsHasBrokenLamp = false;
+        }
+        else
+        {
+            _anim.SetTrigger("TakeLamp");
+            IsHasBrokenLamp = true;
+            CurrentLampCoord = TargetCoordinates;
+        }
+        _anim.applyRootMotion = false;
+    }
+
+    public void TakeWorkingLamp()
+    {
+        _anim.SetTrigger("ChangeLamp");
+    }
+
+    public void OnTakeWorkingLampAnimEnded()
+    {
+        SetTarget(CurrentLampCoord);
+        Launch();
+    }
+
+    public void OnTakeBrokenLampAnimEnded()
+    {
+        OnTakingBrokenAnimEnded?.Invoke(ID);
     }
 
     private IEnumerator FlySequence()
@@ -96,30 +145,31 @@ public class Drone : MonoBehaviour
 
         // Шаг 1: Поднимаемся на заданную высоту
         SetFlightState(FlightSubState.TakingOff);
-        Debug.Log($"Дрон {ID}: Начинаем подъем на высоту {_requiredHeight}");
-        yield return StartCoroutine(LiftToHeight(_requiredHeight));
+        Debug.Log($"Дрон {ID}: Начинаем подъем на высоту {_reservedFlyHight}");
+        yield return StartCoroutine(LiftToHeight(_reservedFlyHight));
 
         // Зависаем на достигнутой высоте
         SetFlightState(FlightSubState.Hovering);
-        Debug.Log($"Дрон {ID}: Зависаем на высоте {_requiredHeight}");
+        Debug.Log($"Дрон {ID}: Зависаем на высоте {_reservedFlyHight}");
         StartHovering();
 
         // Шаг 2: Летим к целевой точке на заданной высоте
         SetFlightState(FlightSubState.Moving);
-        Debug.Log($"Дрон {ID}: Летим к цели {_targetCoordinates}");
-        yield return StartCoroutine(FlyToTarget(_targetCoordinates));
+        Debug.Log($"Дрон {ID}: Летим к цели {TargetCoordinates}");
+        yield return StartCoroutine(FlyToTarget(TargetCoordinates));
 
-        // Зависаем в целевой точке
+        // Шаг 3: Спускаемся на высоту лампы (_lampHeight)
+        SetFlightState(FlightSubState.Descending);
+        Debug.Log($"Дрон {ID}: Спускаемся на высоту лампы {_lampHeight}");
+        StopHovering();
+        yield return StartCoroutine(DescendToLampHeight());
+
+        // Шаг 4: Зависаем на высоте лампы
         SetFlightState(FlightSubState.Hovering);
-        Debug.Log($"Дрон {ID}: Зависаем в точке назначения");
+        Debug.Log($"Дрон {ID}: Зависаем на высоте лампы в точке назначения");
         StartHovering();
 
-        // Шаг 3: Останавливаемся в целевой точке (плавное торможение)
-        SetFlightState(FlightSubState.Landing);
-        Debug.Log($"Дрон {ID}: Останавливаемся в точке назначения");
-        yield return StartCoroutine(StopAtTarget());
-
-        Debug.Log($"Дрон {ID}: Достиг цели!");
+        Debug.Log($"Дрон {ID}: Достиг цели и находится на высоте лампы!");
         CurrentDroneState = DronState.Charging;
         SetFlightState(FlightSubState.Hovering);
 
@@ -169,12 +219,55 @@ public class Drone : MonoBehaviour
         transform.position = finalPosition;
     }
 
+    private IEnumerator DescendToLampHeight()
+    {
+        float startHeight = transform.position.y;
+        float targetHeight;
+        if (!IsHasBrokenLamp)
+        {
+            targetHeight = _lampHeight;
+        }else
+        {
+            targetHeight = 5f;
+        }
+        Vector3 targetPosition = new Vector3(TargetCoordinates.x, targetHeight, TargetCoordinates.z);
+        _rb.isKinematic = true;
+
+
+        float journeyLength = Mathf.Abs(startHeight - targetHeight);
+        float startTime = Time.time;
+
+        while (Mathf.Abs(transform.position.y - targetHeight) > _hoverHeightTolerance)
+        {
+            float distanceCovered = (Time.time - startTime) * _heightSpeed;
+            float fractionOfJourney = distanceCovered / journeyLength;
+
+            // Используем Lerp для плавного спуска
+            Vector3 newPosition = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime);
+
+            // Сохраняем X и Z координаты (не меняем их во время спуска)
+            newPosition.x = TargetCoordinates.x;
+            newPosition.z = TargetCoordinates.z;
+
+            transform.position = newPosition;
+
+            yield return null;
+        }
+
+        // Фиксируем конечную позицию
+        Vector3 finalPosition = transform.position;
+        finalPosition.y = targetHeight;
+        finalPosition.x = TargetCoordinates.x;
+        finalPosition.z = TargetCoordinates.z;
+        transform.position = finalPosition;
+    }
+
     private IEnumerator FlyToTarget(Vector3 target)
     {
         StopHovering();
 
         Vector3 startPosition = transform.position;
-        Vector3 targetPosition = new Vector3(target.x, _requiredHeight, target.z);
+        Vector3 targetPosition = new Vector3(target.x, _reservedFlyHight, target.z);
 
         float journeyLength = Vector3.Distance(startPosition, targetPosition);
         float startTime = Time.time;
@@ -188,30 +281,9 @@ public class Drone : MonoBehaviour
             Vector3 newPosition = Vector3.Lerp(startPosition, targetPosition, fractionOfJourney);
 
             // Сохраняем заданную высоту
-            newPosition.y = _requiredHeight;
+            newPosition.y = _reservedFlyHight;
 
             transform.position = newPosition;
-
-            yield return null;
-        }
-    }
-
-    private IEnumerator StopAtTarget()
-    {
-        StopHovering();
-
-        Vector3 currentPosition = transform.position;
-        float stopDuration = 1f; // Длительность торможения
-        float elapsedTime = 0f;
-
-        while (elapsedTime < stopDuration)
-        {
-            elapsedTime += Time.deltaTime;
-            float t = elapsedTime / stopDuration;
-
-            // Плавная остановка с использованием SmoothStep для более естественного торможения
-            float smoothT = Mathf.SmoothStep(0, 1, t);
-            transform.position = Vector3.Lerp(currentPosition, transform.position, smoothT);
 
             yield return null;
         }
@@ -236,6 +308,7 @@ public class Drone : MonoBehaviour
     private void StopHovering()
     {
         _isHovering = false;
+        _rb.isKinematic = false;
         if (_hoverCoroutine != null)
         {
             StopCoroutine(_hoverCoroutine);
@@ -246,7 +319,7 @@ public class Drone : MonoBehaviour
     private IEnumerator HoverAtCurrentHeight()
     {
         float hoverHeight = transform.position.y;
-        float hoverStability = 0.1f; // Стабильность зависания (меньше значение = стабильнее)
+        //float hoverStability = 0.1f; // Стабильность зависания (меньше значение = стабильнее)
 
         while (_isHovering && CurrentFlightState == FlightSubState.Hovering)
         {
@@ -276,6 +349,10 @@ public class Drone : MonoBehaviour
 
     #endregion
 
+
+
+    #region Setters
+
     private void SetFlightState(FlightSubState newState)
     {
         if (CurrentFlightState != newState)
@@ -283,7 +360,7 @@ public class Drone : MonoBehaviour
             CurrentFlightState = newState;
             OnFlightStateChanged?.Invoke(ID, newState);
 
-            // Останавливаем зависание при смене состояния
+            //Останавливаем зависание при смене состояния
             if (newState != FlightSubState.Hovering)
             {
                 StopHovering();
@@ -291,48 +368,28 @@ public class Drone : MonoBehaviour
         }
     }
 
-    // Альтернативный метод остановки через Rigidbody если нужно
-    private IEnumerator StopWithRigidbody()
-    {
-        if (_rb != null)
-        {
-            float stopTime = 1f;
-            float elapsedTime = 0f;
-            Vector3 initialVelocity = _rb.linearVelocity;
-
-            while (elapsedTime < stopTime)
-            {
-                elapsedTime += Time.deltaTime;
-                float t = elapsedTime / stopTime;
-
-                // Плавно уменьшаем скорость
-                _rb.linearVelocity = Vector3.Lerp(initialVelocity, Vector3.zero, t);
-
-                yield return null;
-            }
-
-            _rb.linearVelocity = Vector3.zero;
-        }
-    }
-
-    #region Setters
-
     public void SetHeight(float requiredHeight)
     {
-        _requiredHeight = requiredHeight;
+        _reservedFlyHight = requiredHeight;
     }
 
-    public void SetTarget(Vector3 targetCoordinates)
+    public void SetTarget(Vector3 targetCoordinates, bool doRandom = true)
     {
         _isGoHome = (targetCoordinates == _stationCoordinates);
 
-        System.Random rand = new System.Random();
-        //разброс в радиусе 3м от таргет точки, тк gps не точный
-        float factorX = rand.Next(-300, 301) / 100;
-        float factorZ = rand.Next(-300, 301) / 100;
+        float factorX = 0f;
+        float factorZ = 0f;
 
-        _targetCoordinates = new Vector3(targetCoordinates.x + factorX, 
-                                         targetCoordinates.y, 
+        if (doRandom)
+        {
+            System.Random rand = new System.Random();
+            //разброс в радиусе 3м от таргет точки, тк gps не точный
+            factorX = rand.Next(-300, 301) / 100;
+            factorZ = rand.Next(-300, 301) / 100;
+        }
+
+        TargetCoordinates = new Vector3(targetCoordinates.x + factorX,
+                                         targetCoordinates.y,
                                          targetCoordinates.z + factorZ);
     }
 
@@ -345,18 +402,24 @@ public class Drone : MonoBehaviour
         {
             // Рисуем точку подъема
             Gizmos.color = Color.yellow;
-            Vector3 liftPoint = new Vector3(transform.position.x, _requiredHeight, transform.position.z);
+            Vector3 liftPoint = new Vector3(transform.position.x, _reservedFlyHight, transform.position.z);
             Gizmos.DrawWireSphere(liftPoint, 0.3f);
 
-            // Рисуем целевую точку
+            // Рисуем целевую точку на высоте полета
             Gizmos.color = Color.green;
-            Vector3 targetPoint = new Vector3(_targetCoordinates.x, _requiredHeight, _targetCoordinates.z);
+            Vector3 targetPoint = new Vector3(TargetCoordinates.x, _reservedFlyHight, TargetCoordinates.z);
             Gizmos.DrawWireSphere(targetPoint, 0.5f);
+
+            // Рисуем точку на высоте лампы
+            Gizmos.color = Color.cyan;
+            Vector3 lampPoint = new Vector3(TargetCoordinates.x, _lampHeight, TargetCoordinates.z);
+            Gizmos.DrawWireSphere(lampPoint, 0.5f);
 
             // Рисуем линию маршрута
             Gizmos.color = Color.blue;
             Gizmos.DrawLine(transform.position, liftPoint);
             Gizmos.DrawLine(liftPoint, targetPoint);
+            Gizmos.DrawLine(targetPoint, lampPoint);
 
             // Визуализация состояния полета
             string stateText = $"State: {CurrentFlightState}";

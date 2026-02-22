@@ -11,9 +11,11 @@ GameObject:
   - component: {fileID: 5675769669309432197}
   - component: {fileID: 4410487913853168534}
   - component: {fileID: 2478404652402413062}
+  - component: {fileID: 5540972575767437339}
+  - component: {fileID: 7393058233934530226}
   m_Layer: 0
   m_Name: Drone
-  m_TagString: Untagged
+  m_TagString: Drone
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -46,6 +48,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c8405be97b8ea0648a4f45c4dd4d79cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Drone
+  TargetCoordinates: {x: 0, y: 0, z: 0}
+  CurrentLampCoord: {x: 0, y: 0, z: 0}
+  _flightSpeed: 40
+  _heightSpeed: 20
+  _stopDistance: 0.1
+  _hoverHeightTolerance: 0.05
 --- !u!54 &2478404652402413062
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -68,11 +76,54 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
+  m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!65 &5540972575767437339
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 21786156171929556}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 0.7148404, z: 1}
+  m_Center: {x: 0, y: -0.1425798, z: 0}
+--- !u!95 &7393058233934530226
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 21786156171929556}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: e8b3373f6f9ffdd45adacbe650c9e7bc, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &2027913252229133370
 GameObject:
   m_ObjectHideFlags: 0
@@ -84,7 +135,6 @@ GameObject:
   - component: {fileID: 1677482483539284909}
   - component: {fileID: 7210894394943114211}
   - component: {fileID: 6987267813263992134}
-  - component: {fileID: 3281096340652192381}
   m_Layer: 0
   m_Name: Body
   m_TagString: Untagged
@@ -164,27 +214,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &3281096340652192381
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2027913252229133370}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &6928090720885539268
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using TMPro;
 
 public class DronesStation : MonoBehaviour
 {
@@ -77,11 +78,21 @@ public class DronesStation : MonoBehaviour
         droneToFly.SetTarget(targetPillarPosition);
         droneToFly.SetHeight(20f);
         droneToFly.Launch();
+        droneToFly.OnDroneAtHome += DroneReturned;
     }
 
+    private void DroneReturned(int ID)
+    {
+        Drone drone = _drones[ID];
+        if (drone.IsHasBrokenLamp)
+        {
+            drone.TakeWorkingLamp();
+        }
+    }
 
     private void DroneReady(int droneID)
     {
+
         _drones[droneID].OnDroneChargetEnought -= DroneReady;
         _drones[droneID].OnDroneAtHome -= DroneReady;
 
@@ -123,7 +134,6 @@ public class DronesStation : MonoBehaviour
                 if (drone.CurrentDroneState == Drone.DronState.Charging)
                 {
                     drone.OnDroneChargetEnought += DroneReady;
-                    drone.OnDroneAtHome += DroneReady;
                 }
             }
         }
@@ -132,7 +142,6 @@ public class DronesStation : MonoBehaviour
             foreach (Drone drone in _drones)
             {
                 drone.OnDroneChargetEnought -= DroneReady;
-                drone.OnDroneAtHome -= DroneReady;
             }
         }
     }
