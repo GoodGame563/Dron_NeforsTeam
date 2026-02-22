@@ -1,11 +1,11 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 YaBrowser/25.12.0.0 Safari/537.36" version="29.5.1">
   <diagram name="Страница-1" id="eybBnrngNag5dezuKZf2">
-    <mxGraphModel dx="2066" dy="2297" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="2066" dy="1128" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="5hcl8xJyyCSRQJrNCPGY-1" parent="1" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;" value="Pillars" vertex="1">
-          <mxGeometry height="270" width="330" x="40" y="100" as="geometry" />
+          <mxGeometry height="270" width="330" x="30" y="380" as="geometry" />
         </mxCell>
         <mxCell id="5hcl8xJyyCSRQJrNCPGY-22" parent="5hcl8xJyyCSRQJrNCPGY-1" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;" vertex="1">
           <mxGeometry height="30" width="330" y="30" as="geometry" />
@@ -134,7 +134,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="5hcl8xJyyCSRQJrNCPGY-27" parent="1" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;" value="Dron stations" vertex="1">
-          <mxGeometry height="270" width="330" x="660" y="-190" as="geometry" />
+          <mxGeometry height="270" width="330" x="650" y="90" as="geometry" />
         </mxCell>
         <mxCell id="5hcl8xJyyCSRQJrNCPGY-28" parent="5hcl8xJyyCSRQJrNCPGY-27" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;" vertex="1">
           <mxGeometry height="30" width="330" y="30" as="geometry" />
@@ -269,7 +269,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="5hcl8xJyyCSRQJrNCPGY-57" parent="1" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;" value="Drons" vertex="1">
-          <mxGeometry height="270" width="330" x="450" y="350" as="geometry" />
+          <mxGeometry height="270" width="330" x="510" y="730" as="geometry" />
         </mxCell>
         <mxCell id="5hcl8xJyyCSRQJrNCPGY-58" parent="5hcl8xJyyCSRQJrNCPGY-57" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;" vertex="1">
           <mxGeometry height="30" width="330" y="30" as="geometry" />
@@ -398,7 +398,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="IPFodnMikoEhL-xmZ4eC-1" parent="1" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;" value="Pillar stations" vertex="1">
-          <mxGeometry height="190" width="330" x="50" y="430" as="geometry" />
+          <mxGeometry height="190" width="330" x="40" y="800" as="geometry" />
         </mxCell>
         <mxCell id="IPFodnMikoEhL-xmZ4eC-2" parent="IPFodnMikoEhL-xmZ4eC-1" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;" vertex="1">
           <mxGeometry height="30" width="330" y="30" as="geometry" />
@@ -491,7 +491,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="IPFodnMikoEhL-xmZ4eC-34" parent="1" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;strokeColor=default;" value="Tasks" vertex="1">
-          <mxGeometry height="230" width="330" x="850" y="150" as="geometry" />
+          <mxGeometry height="230" width="330" x="900" y="430" as="geometry" />
         </mxCell>
         <mxCell id="IPFodnMikoEhL-xmZ4eC-35" parent="IPFodnMikoEhL-xmZ4eC-34" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;strokeColor=default;" vertex="1">
           <mxGeometry height="30" width="330" y="30" as="geometry" />
@@ -626,7 +626,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="IPFodnMikoEhL-xmZ4eC-67" parent="1" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;" value="Pillar to dron station" vertex="1">
-          <mxGeometry height="150" width="330" x="140" y="-190" as="geometry" />
+          <mxGeometry height="150" width="330" x="150" y="110" as="geometry" />
         </mxCell>
         <mxCell id="IPFodnMikoEhL-xmZ4eC-68" parent="IPFodnMikoEhL-xmZ4eC-67" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;" vertex="1">
           <mxGeometry height="30" width="330" y="30" as="geometry" />
