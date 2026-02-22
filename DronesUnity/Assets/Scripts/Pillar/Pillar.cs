@@ -60,6 +60,8 @@ public class Pillar : MonoBehaviour
         CurrentState = PillarState.Broken;
         Debug.LogWarning($"@Debug: You broke the Pillar {ID}");
 
+        
+
         OnBroken?.Invoke(ID);
         //так же мен€ть материалы дл€ визуализации и прочее
     }

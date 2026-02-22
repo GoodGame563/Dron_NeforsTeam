@@ -24,6 +24,7 @@ public class PillarStation : MonoBehaviour
     private void PillarBroken(string brokenPillarID)
     {
         OnPillarBroken?.Invoke(brokenPillarID);
+        
     }
 
 
