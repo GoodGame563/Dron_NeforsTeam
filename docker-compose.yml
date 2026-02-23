@@ -57,6 +57,21 @@ services:
       VITE_WS_URL: ${VITE_WS_URL}
     networks:
       - default
+      
+  backend:
+    container_name: drone-backend
+    build: ./server
+    image: drone-backend:latest
+    ports: "8000:8000"
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    networks:
+      - default
+    depends_on:
+      - db
 
 volumes:
   postgres_data:
