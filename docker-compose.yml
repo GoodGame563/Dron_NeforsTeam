@@ -55,8 +55,6 @@ services:
     ports: 
       - "80:80"
     restart: unless-stopped
-    env_file:
-      - ./frontend/.env
     environment:
       VITE_WS_URL: ${VITE_WS_URL}
     networks:
@@ -69,8 +67,6 @@ services:
     ports: 
       - "7000:8000"
     restart: unless-stopped
-    env_file:
-      - ./server/.env
     environment:
       DB_URL: ${DB_URL}
     networks:
