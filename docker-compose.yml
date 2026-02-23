@@ -1,4 +1,4 @@
-version: "3.9"
+version: "3.7"
 
 services:
   db:
@@ -49,7 +49,8 @@ services:
     container_name: drone-frontend
     build: ./frontend
     image: drone-frontend:latest
-    ports: "80:80"
+    ports: 
+      - "80:80"
     restart: unless-stopped
     env_file:
       - ./frontend/.env
@@ -62,7 +63,8 @@ services:
     container_name: drone-backend
     build: ./server
     image: drone-backend:latest
-    ports: "8000:8000"
+    ports: 
+      - "7000:8000"
     restart: unless-stopped
     env_file:
       - ./server/.env
