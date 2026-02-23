@@ -31,6 +31,7 @@ app = FastAPI(
 )
 
 db_str_connection = os.getenv("DB_URL")
+print(db_str_connection)
 if db_str_connection is None:
     db_str_connection = "postgresql://drone_admin:12345678@localhost:5432/base"
 manager = Manager()

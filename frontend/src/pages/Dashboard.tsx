@@ -18,7 +18,7 @@ export function Dashboard() {
     <div className="flex h-screen bg-[#0f1117] text-white overflow-hidden">
       <aside className="w-80 shrink-0 flex flex-col border-r border-white/10">
         <Header />
-        <StationList />)
+        <StationList />
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0">
