@@ -14,7 +14,7 @@ public class Pillar : MonoBehaviour
 
     public PillarState CurrentState { get; private set; }
 
-    public string ID { get; private set; }
+    public string ID { get; set; }
 
     private PillarAnimations _anim;
     private Drone _currentDrone;

@@ -3,5 +3,4 @@
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="SingularityGroup.HotReload.Runtime.Public.csproj" />
   <Project Path="SingularityGroup.HotReload.Runtime.csproj" />
-  <Project Path="endel.nativewebsocket.csproj" />
 </Solution>

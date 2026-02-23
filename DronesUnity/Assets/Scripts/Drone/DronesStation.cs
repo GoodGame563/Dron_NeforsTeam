@@ -1,4 +1,4 @@
-using Models;
+п»їusing Models;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,6 +7,7 @@ public class DronesStation : MonoBehaviour
 {
     [SerializeField] private List<Drone> _drones;
     [SerializeField] private List<PillarStation> _pillarStations;
+    [SerializeField] private GameObject _pillarPrefab;
 
     private DroneStationClient _client;
 
@@ -30,15 +31,15 @@ public class DronesStation : MonoBehaviour
     {
         _client = GetComponent<DroneStationClient>();
 
-        if (_id == string.Empty || true) //id всегда при запуске пустое
+        if (_id == string.Empty || true) //id ГўГ±ГҐГЈГ¤Г  ГЇГ°ГЁ Г§Г ГЇГіГ±ГЄГҐ ГЇГіГ±ГІГ®ГҐ
         {
             _client.RegisterStation(new Models.RegisterMessage()
             {
                 Event = "register",
                 Coordinates = new Coordinates()
                 {
-                    Latitude = transform.position.x,
-                    Longtiude = transform.position.z
+                    X = transform.position.x,
+                    Y = transform.position.z
                 },
                 Radius = 1000,
                 TotalDroneCount = 2,
@@ -92,9 +93,44 @@ public class DronesStation : MonoBehaviour
 
     private void GetPillarsResponse(GetPillarsMessage message)
     {
-        _pillarsResponseMesseage = message;
-        Debug.Log(message);
-        Debug.Log($"@Drone Station gettet pillar response: Pillars count: {_pillarsResponseMesseage.Pillars.Count}");
+        for (int i = 0; i < message.Data.Count; i++)
+        {
+            var pillar = message.Data[i];
+
+            Vector3 position = new Vector3(
+                pillar.Coordinates.X,
+                0f,
+                pillar.Coordinates.Y
+            );
+
+            Vector3 forward;
+
+            if (i < message.Data.Count - 1)
+            {
+                var next = message.Data[i + 1];
+                Vector3 nextPos = new Vector3(next.Coordinates.X, 0f, next.Coordinates.Y);
+                forward = (nextPos - position).normalized;
+            }
+            else
+            {
+                var prev = message.Data[i - 1];
+                Vector3 prevPos = new Vector3(prev.Coordinates.X, 0f, prev.Coordinates.Y);
+                forward = (position - prevPos).normalized;
+            }
+
+            Vector3 perpendicular = Vector3.Cross(Vector3.up, forward).normalized;
+
+            float side = Vector3.Dot(perpendicular, position);
+
+            if (side < 0)
+                perpendicular = -perpendicular;
+
+            Quaternion rotation = Quaternion.LookRotation(perpendicular);
+
+            GameObject qwe = Instantiate(_pillarPrefab, position, rotation);
+            var pil = qwe.GetComponent<Pillar>();
+            pil.ID = pillar.Id;
+        }
     }
 
     private void ServError(string errorMesseage)
@@ -130,7 +166,7 @@ public class DronesStation : MonoBehaviour
     {
         _pillarCoordinatesDict.TryGetValue(id, out Vector3 targetPillarPosition);
 
-        //перед этим еще очередь проверить отправить сначало на корды из очереди
+        //ГЇГҐГ°ГҐГ¤ ГЅГІГЁГ¬ ГҐГ№ГҐ Г®Г·ГҐГ°ГҐГ¤Гј ГЇГ°Г®ГўГҐГ°ГЁГІГј Г®ГІГЇГ°Г ГўГЁГІГј Г±Г­Г Г·Г Г«Г® Г­Г  ГЄГ®Г°Г¤Г» ГЁГ§ Г®Г·ГҐГ°ГҐГ¤ГЁ
 
         SendDrone(targetPillarPosition);
     }
