@@ -13,7 +13,7 @@ export default function App() {
   useEffect(() => {
     connect();
     return () => disconnect();
-  }, [connect, disconnect]);
+  }, []);
 
   return (
     <ThemeProvider theme={theme}>
