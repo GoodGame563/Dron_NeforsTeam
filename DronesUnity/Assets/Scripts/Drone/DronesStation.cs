@@ -22,6 +22,7 @@ public class DronesStation : MonoBehaviour
     private string _id;
     private List<string> _dronesIDList;
     private List<Models.Drone> _dronesModels;
+    private ChangePillarMessage _changePillarMesseage;
 
     private GetPillarsMessage _pillarsResponseMesseage;
 
@@ -57,6 +58,7 @@ public class DronesStation : MonoBehaviour
         _client.OnRegisterDronsResponse += RegisterDrones;
         _client.OnGetDronsResponse += GetDronesModel;
         _client.OnGetPillarsResponse += GetPillarsResponse;
+        _client.OnChagePillarMessage += OnChangePillareMesseage;
         _client.OnError += ServError;
     }
 
@@ -66,6 +68,7 @@ public class DronesStation : MonoBehaviour
         _client.OnRegisterDronsResponse -= RegisterDrones;
         _client.OnGetDronsResponse -= GetDronesModel;
         _client.OnGetPillarsResponse -= GetPillarsResponse;
+        _client.OnChagePillarMessage -= OnChangePillareMesseage;
         _client.OnError -= ServError;
     }
 
@@ -89,6 +92,12 @@ public class DronesStation : MonoBehaviour
     {
         _dronesModels = models;
         Debug.Log($"@Drone Station gettet drones model: Count: {_dronesModels.Count}");
+    }
+
+    private void OnChangePillareMesseage(ChangePillarMessage changePillarMesseage)
+    {
+        _changePillarMesseage = changePillarMesseage;
+        Debug.Log($"@Drone Station change pillar messeage: {changePillarMesseage}");
     }
 
     private void GetPillarsResponse(GetPillarsMessage message)
