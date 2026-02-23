@@ -1,7 +1,12 @@
 import { create } from "zustand";
 
 import type { Pillar, DronStation } from "../types/type.ts";
-import type { WsMessage, AllDataMessage } from "../types/ws.ts";
+import type {
+  WsMessage,
+  AllDataMessage,
+  ChangeStateDrone,
+  ChangeStatePillar,
+} from "../types/ws.ts";
 
 type State = {
   socket: WebSocket | null;
@@ -49,6 +54,72 @@ export const useSocketStore = create<State & Actions>((set, get) => ({
           pillars: (message as AllDataMessage).data.pillars,
           stations: (message as AllDataMessage).data.dron_stations,
         });
+        return;
+      }
+
+      if (message.event == "change_state_drone") {
+        const { id, state, last_coordinates } = (message as ChangeStateDrone)
+          .data;
+
+        set((prev) => {
+          const updatedStations = prev.stations.map((station) => {
+            const updatedDrones = station.drons.map((drone) =>
+              drone.id === id
+                ? { ...drone, status: state, last_coordinates }
+                : drone,
+            );
+
+            return {
+              ...station,
+              drons: updatedDrones,
+            };
+          });
+
+          let updatedSelectedStation = prev.selectedStation;
+
+          if (prev.selectedStation) {
+            const updatedDrones = prev.selectedStation.drons.map((drone) =>
+              drone.id === id
+                ? { ...drone, status: state, last_coordinates }
+                : drone,
+            );
+
+            updatedSelectedStation = {
+              ...prev.selectedStation,
+              drons: updatedDrones,
+            };
+          }
+
+          return {
+            stations: updatedStations,
+            selectedStation: updatedSelectedStation,
+          };
+        });
+
+        return;
+      }
+
+      if (message.event == "change_state_pillar") {
+        const { id, state } = (message as ChangeStatePillar).data;
+
+        set((prev) => {
+          const updatedPillars = prev.pillars.map((pillar) =>
+            pillar.id === id
+              ? { ...pillar, state, last_update: new Date() }
+              : pillar,
+          );
+
+          const updatedSelected =
+            prev.selectedPillar?.id === id
+              ? { ...prev.selectedPillar, state, last_update: new Date() }
+              : prev.selectedPillar;
+
+          return {
+            pillars: updatedPillars,
+            selectedPillar: updatedSelected,
+          };
+        });
+
         return;
       }
     };
