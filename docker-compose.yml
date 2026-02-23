@@ -47,7 +47,10 @@ services:
 
   frontend:
     container_name: drone-frontend
-    build: ./frontend
+    build: 
+      context: ./frontend
+      args:
+        VITE_WS_URL: ${VITE_WS_URL}
     image: drone-frontend:latest
     ports: 
       - "80:80"
