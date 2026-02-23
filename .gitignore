@@ -1,2 +1,6 @@
 **/.env
+DronesUnity/Library
+DronesUnity/Logs
+DronesUnity/UserSettings
+DronesUnity/*.csproj
 postgres_data

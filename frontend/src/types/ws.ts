@@ -1,4 +1,11 @@
-import type { Pillar, DronStation, PillarStation } from "./type.ts";
+import type {
+  Pillar,
+  DronStation,
+  PillarStation,
+  LampStatus,
+  DronStatus,
+  Coordinates,
+} from "./type.ts";
 
 export type AllDataMessage = {
   event: "all_data";
@@ -16,4 +23,25 @@ export type SendDroneMessage = {
   };
 };
 
-export type WsMessage = AllDataMessage | SendDroneMessage;
+export type ChangeStatePillar = {
+  event: "change_state_pillar";
+  data: {
+    id: string;
+    state: LampStatus;
+  };
+};
+
+export type ChangeStateDrone = {
+  event: "change_state_drone";
+  data: {
+    id: string;
+    state: DronStatus;
+    last_coordinates: Coordinates;
+  };
+};
+
+export type WsMessage =
+  | AllDataMessage
+  | SendDroneMessage
+  | ChangeStatePillar
+  | ChangeStateDrone;
