@@ -10,6 +10,13 @@
 | `/dron_station` | Drone Station | Управление станцией дронов |
 | `/frontend` | Frontend | Получение данных системы и уведомления об изменениях |
 
+### Общая информация
+
+- **Протокол:** WebSocket (ws:// или wss://)
+- **Формат сообщений:** JSON
+- **Кодировка:** UTF-8
+- **Версия API:** 0.2.0
+
 ---
 
 ## 1. Pillar Station (`/pillar_station`)
@@ -70,6 +77,15 @@ ws://server:port/pillar_station
 ```
 *Соединение закрывается с кодом 1003*
 
+**Ошибка (невалидный JSON / отсутствуют поля):**
+```json
+{
+  "event": "status",
+  "status": "Err",
+  "message": "You lost fields"
+}
+```
+
 ---
 
 ### Команды
@@ -105,6 +121,45 @@ ws://server:port/pillar_station
 ```
 
 > **Примечание:** После изменения состояния на `"death"` или `"empty"` сервер отправляет уведомление станции дронов, за которой закреплён столб, и всем frontend-клиентам.
+
+---
+
+### События от сервера
+
+#### set_mode_pillar — Уведомление о режиме обслуживания столба
+
+Сервер отправляет это событие при изменении состояния столба, закреплённого за станцией.
+
+**При переходе в `"death"` или `"empty"`:**
+```json
+{
+  "event": "set_mode_pillar",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "is_hit": false,
+    "is_service": true
+  }
+}
+```
+
+**При переходе в `"alive"`:**
+```json
+{
+  "event": "set_mode_pillar",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "is_hit": false,
+    "is_service": false
+  }
+}
+```
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `event` | string | Всегда `"set_mode_pillar"` |
+| `data.id` | UUID (string) | Идентификатор столба |
+| `data.is_hit` | boolean | Флаг удара (всегда `false`) |
+| `data.is_service` | boolean | Флаг сервисного режима (`true` для `"death"`/`"empty"`, `false` для `"alive"`) |
 
 ---
 
@@ -160,6 +215,18 @@ ws://server:port/dron_station
 ```
 *В поле `message` возвращается UUID созданной станции*
 
+**Дополнительно:** После успешной регистрации сервер автоматически:
+1. Создаёт дронов в количестве `total_drone_count` (если их меньше, чем указано)
+2. Закрепляет столбы в радиусе `radius` за станцией
+3. Отправляет список созданных дронов:
+```json
+{
+  "event": "status",
+  "status": "Ok",
+  "message": "[\"uuid-dron-1\", \"uuid-dron-2\", ...]"
+}
+```
+
 #### Вариант 2: Вход существующей станции (enter)
 
 **Запрос:**
@@ -209,6 +276,75 @@ ws://server:port/dron_station
 
 ### События от сервера
 
+#### get_drons — Список дронов станции
+
+Отправляется сразу после успешной авторизации (`enter`/`register`).
+
+```json
+{
+  "event": "get_drons",
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440010",
+      "status": "in_station",
+      "last_coordinates": null
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440011",
+      "status": "fly",
+      "last_coordinates": {
+        "x": 55751244,
+        "y": 37618423
+      }
+    }
+  ]
+}
+```
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `event` | string | Всегда `"get_drons"` |
+| `data` | array | Массив дронов |
+| `data[].id` | UUID (string) | Идентификатор дрона |
+| `data[].status` | string | Статус дрона |
+| `data[].last_coordinates` | object \| null | Последние координаты |
+
+#### get_pillars — Список столбов станции
+
+Отправляется сразу после успешной авторизации (`enter`/`register`).
+
+```json
+{
+  "event": "get_pillars",
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
+      "coordinates": {
+        "x": 55751244,
+        "y": 37618423
+      },
+      "state": "alive",
+      "pillar_station_id": "550e8400-e29b-41d4-a716-446655440000",
+      "id_dron_station": "550e8400-e29b-41d4-a716-446655440000",
+      "last_update": "2026-02-23T12:00:00.000000"
+    }
+  ]
+}
+```
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `event` | string | Всегда `"get_pillars"` |
+| `data` | array | Массив столбов |
+| `data[].id` | UUID (string) | Идентификатор столба |
+| `data[].coordinates` | object | Координаты столба |
+| `data[].coordinates.x` | int | Широта |
+| `data[].coordinates.y` | int | Долгота |
+| `data[].state` | string | Состояние столба |
+| `data[].pillar_station_id` | UUID (string) | ID станции столбов |
+| `data[].id_dron_station` | UUID (string) | ID станции дронов |
+| `data[].last_update` | string | ISO 8601 timestamp |
+
 #### change_state_pillar — Уведомление об изменении состояния столба
 
 Сервер отправляет это событие при изменении состояния столба, закреплённого за станцией.
@@ -228,6 +364,38 @@ ws://server:port/dron_station
 | `event` | string | Всегда `"change_state_pillar"` |
 | `data.id` | UUID (string) | Идентификатор столба |
 | `data.status` | string | Новое состояние: `"death"`, `"empty"` |
+
+---
+
+### Команды
+
+#### change_dron_state — Изменить состояние дрона
+
+Обновляет состояние дрона в БД и уведомляет frontend-клиентов.
+
+**Запрос:**
+```json
+{
+  "event": "change_dron_state",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440010",
+    "status": "fly",
+    "last_coordinates": {
+      "x": 55751244,
+      "y": 37618423
+    }
+  }
+}
+```
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `event` | string | Всегда `"change_dron_state"` |
+| `data.id` | UUID (string) | Идентификатор дрона |
+| `data.status` | string | Новое состояние: `"in_station"`, `"fly"`, `"broken"` |
+| `data.last_coordinates` | object \| null | Последние координаты дрона |
+| `data.last_coordinates.x` | int | Широта |
+| `data.last_coordinates.y` | int | Долгота |
 
 ---
 
@@ -336,6 +504,48 @@ ws://server:port/frontend
 | `data.id` | UUID (string) | Идентификатор столба |
 | `data.state` | string | Новое состояние |
 
+#### change_state_dron — Уведомление об изменении состояния дрона
+
+```json
+{
+  "event": "change_state_dron",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440010",
+    "state": "fly",
+    "last_coordinates": {
+      "x": 55751244,
+      "y": 37618423
+    }
+  }
+}
+```
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `event` | string | Всегда `"change_state_dron"` |
+| `data.id` | UUID (string) | Идентификатор дрона |
+| `data.state` | string | Новое состояние |
+| `data.last_coordinates` | object \| null | Последние координаты дрона |
+
+---
+
+### Команды
+
+#### change_lamp_state — Изменить состояние фонаря
+
+Аналогично команде в `/pillar_station`.
+
+**Запрос:**
+```json
+{
+  "event": "change_lamp_state",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "status": "death"
+  }
+}
+```
+
 ---
 
 ## Формат сообщений
@@ -378,17 +588,17 @@ ws://server:port/frontend
 
 | Состояние | Описание |
 |-----------|----------|
-| `empty` | Свободен |
-| `death` | Выключен/сломан |
-| `alive` | Активен |
+| `empty` | Свободен (не активен, доступен для закрепления) |
+| `death` | Выключен/сломан (требует обслуживания) |
+| `alive` | Активен (работает в штатном режиме) |
 
 ### Статусы дрона (`dron_status`)
 
 | Статус | Описание |
 |--------|----------|
-| `in_station` | Дрон на станции |
-| `fly` | Дрон в полёте |
-| `broken` | Дрон сломан |
+| `in_station` | Дрон на станции (готов к вылету) |
+| `fly` | Дрон в полёте (выполняет задачу) |
+| `broken` | Дрон сломан (требует ремонта) |
 
 ---
 
@@ -396,7 +606,26 @@ ws://server:port/frontend
 
 | Код | Описание |
 |-----|----------|
-| 1003 | Ошибка формата данных (неверное первое сообщение) |
+| 1003 | Ошибка формата данных (неверное первое сообщение, невалидный JSON) |
+
+---
+
+## Обработка ошибок
+
+### Ошибки авторизации
+
+| Ситуация | Ответ сервера | Действие |
+|----------|---------------|----------|
+| Первое сообщение не `enter`/`register` | `{"event": "status", "status": "Err", "message": "First message must be enter"}` | Соединение закрывается (код 1003) |
+| Неверный UUID станции | `{"event": "status", "status": "Err", "message": "Ошибка в данных"}` | Соединение закрывается |
+| Невалидный JSON | `{"event": "status", "status": "Err", "message": "You lost fields"}` | Соединение закрывается |
+
+### Ошибки команд
+
+| Ситуация | Ответ сервера |
+|----------|---------------|
+| Неверный формат команды | `{"event": "status", "status": "Err", "message": "You lost fields"}` |
+| Несуществующий столб/дрон | Команда игнорируется (без ответа) |
 
 ---
 
@@ -432,6 +661,11 @@ async def pillar_client():
         response = await ws.recv()
         print(f"Ответ: {response}")
 
+        # Ожидание уведомлений о режиме обслуживания
+        while True:
+            notification = await ws.recv()
+            print(f"Уведомление: {notification}")
+
 asyncio.run(pillar_client())
 ```
 
@@ -454,8 +688,18 @@ async def drone_client():
                 "total_lamps_count": 50
             }
         }))
+        
+        # Получение статуса регистрации (UUID станции)
         response = await ws.recv()
-        print(f"Ответ: {response}")
+        print(f"Регистрация: {response}")
+        
+        # Получение списка созданных дронов
+        response = await ws.recv()
+        print(f"Дроны: {response}")
+        
+        # Получение списка столбов
+        response = await ws.recv()
+        print(f"Столбы: {response}")
 
         # Ожидание уведомлений об изменении состояния столбов
         while True:
@@ -492,7 +736,79 @@ async def frontend_client():
         while True:
             response = await ws.recv()
             update = json.loads(response)
-            print(f"Обновление: {update}")
+            event = update.get('event')
+            
+            if event == 'change_state_pillar':
+                print(f"Столб {update['data']['id']} изменил состояние на {update['data']['state']}")
+            elif event == 'change_state_dron':
+                print(f"Дрон {update['data']['id']} изменил состояние на {update['data']['state']}")
 
 asyncio.run(frontend_client())
+```
+
+### JavaScript (клиент Frontend)
+
+```javascript
+const ws = new WebSocket('ws://localhost:8000/frontend');
+
+ws.onopen = () => {
+    console.log('Подключено к серверу');
+};
+
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    
+    if (data.event === 'all_data') {
+        console.log('Получены все данные:', data.data);
+        // Инициализация UI
+    } else if (data.event === 'change_state_pillar') {
+        console.log(`Столб ${data.data.id} изменил состояние на ${data.data.state}`);
+        // Обновление UI
+    } else if (data.event === 'change_state_dron') {
+        console.log(`Дрон ${data.data.id} изменил состояние на ${data.data.state}`);
+        // Обновление UI
+    }
+};
+
+ws.onerror = (error) => {
+    console.error('Ошибка WebSocket:', error);
+};
+
+ws.onclose = () => {
+    console.log('Соединение закрыто');
+};
+```
+
+---
+
+## Диаграмма последовательности
+
+### Регистрация Drone Station
+
+```
+Drone Station          Server              Database
+      |                   |                    |
+      |--- register ----->|                    |
+      |                   |--- insert_dron_station ->|
+      |                   |<-------------------|
+      |                   |--- create_drons -->|
+      |                   |--- assign_pillars ->|
+      |<-- status (UUID)--|                    |
+      |<-- status (drons)-|                    |
+      |<-- get_pillars ---|                    |
+      |                   |                    |
+```
+
+### Изменение состояния столба
+
+```
+Pillar Station         Server              Database           Frontend
+      |                   |                    |                  |
+      |-- change_lamp -->|                    |                  |
+      |                   |--- update_pillar ->|                  |
+      |                   |<-------------------|                  |
+      |                   |--------------------->| notify dron    |
+      |                   |--------------------->| set_mode_pillar|
+      |                   |------------------------------------->|
+      |<-- status --------|                    |                  |
 ```

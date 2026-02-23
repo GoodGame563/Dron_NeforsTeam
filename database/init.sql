@@ -82,6 +82,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION get_pillar_station_by_pillar_id(p_pillar_id UUID) RETURNS SETOF pillar_stations AS $$
+BEGIN
+    RETURN QUERY
+    SELECT ps.*
+    FROM pillar_stations ps
+    JOIN pillars p ON p.id_pillar_station = ps.id
+    WHERE p.id = p_pillar_id;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION get_all_pillar_stations() RETURNS SETOF pillar_stations AS $$
 BEGIN
     RETURN QUERY SELECT * FROM pillar_stations;
