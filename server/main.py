@@ -23,13 +23,16 @@ from db_work import (
 )
 from datetime import datetime
 import asyncpg
+import os
 import uuid
 
 app = FastAPI(
     version="0.2.0",
 )
 
-db_str_connection = "postgresql://drone_admin:12345678@localhost:5432/base"
+db_str_connection = os.getenv("DB_URL")
+if db_str_connection is None:
+    db_str_connection = "postgresql://drone_admin:12345678@localhost:5432/base"
 manager = Manager()
 
 
