@@ -118,9 +118,10 @@ public class DronesStation : MonoBehaviour
 
 
         int newId = 0;
-        for (int i = 0; i < _dronesIDList.Count; i++)
+        for (int i = 0; i < _drones.Count; i++)
         {
-            _drones[i].Initialize(_dronesIDList[i], transform.position);
+            _drones[i].Initialize(newId.ToString(), transform.position);
+            newId++;
         }
 
     }

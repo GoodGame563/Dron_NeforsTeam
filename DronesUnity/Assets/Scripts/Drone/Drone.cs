@@ -90,12 +90,13 @@ public class Drone : MonoBehaviour
     public void Initialize(string newId, Vector3 stationCoordinates)
     {
         _stationCoordinates = stationCoordinates;
+        
         ID = newId;
 
         CurrentDroneState = DronState.Ready;
         CurrentFlightState = FlightSubState.Hovering; // Начальное состояние - зависание на земле
 
-        Debug.Log($"Drone {ID} Initialized");
+        Debug.Log($"Drone {ID} Initialized! _stationCoordinates = {_stationCoordinates}");
     }
 
     public void Launch()
@@ -224,6 +225,12 @@ public class Drone : MonoBehaviour
                 OnDroneNeedChangingLamp?.Invoke(ID);
                 CurrentDroneState = DronState.HaveWorkingLamp;
                 Debug.Log($"Drone need to change lamp");
+            }
+            else if(CurrentDroneState == DronState.HaveWorkingLamp)
+            {
+                SetTarget(CurrentLampCoord, false);
+                Launch();
+                CurrentDroneState = DronState.Flying;
             }
             else
             {
