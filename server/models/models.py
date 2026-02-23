@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from enum import Enum
 from typing import Literal, Dict, List, Any
-
+from base_models import Coordinates
 
 class ClientType(str, Enum):
     DRONE_STATION = "drone_station"
@@ -13,11 +13,6 @@ class DronStatus(str, Enum):
     STATION = "in_station"
     WORK = "fly"
     BROKEN = "broken"
-
-
-class Coordinates(BaseModel):
-    latitude: float
-    longtiude: float
 
 
 class RegisterMessage(BaseModel):

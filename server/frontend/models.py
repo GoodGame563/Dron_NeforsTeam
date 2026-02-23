@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from .base_models import Coordinates
+from base_models import Coordinates
 from typing import List
 
 
@@ -9,6 +9,7 @@ class Pillar(BaseModel):
     state: str
     pillar_station_id: str
     last_update: str
+    id_dron_station:str|None
 
 
 class PillarStation(BaseModel):

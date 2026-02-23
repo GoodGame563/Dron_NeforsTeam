@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from .frontend_models import Pillar, PillarStation, DronStation
+from .models import Pillar, PillarStation, DronStation
 from typing import List, Any
 
 
@@ -8,6 +8,9 @@ class GreetingMessage(BaseModel):
     pillar_stations: List[PillarStation]
     dron_stations: List[DronStation]
 
+class ChangeStatePillar(BaseModel):
+    id: str
+    state: str
 
 class BaseMessage(BaseModel):
     event: str
