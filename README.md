@@ -17,3 +17,4 @@
 ### Backend
 - fastapi
 - websocket
+- asyncpg
