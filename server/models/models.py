@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Literal, Dict, List, Any
 from base_models import Coordinates
 
+
 class ClientType(str, Enum):
     DRONE_STATION = "drone_station"
     PILLAR_STATION = "pillar_station"

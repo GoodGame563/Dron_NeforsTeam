@@ -9,7 +9,7 @@ class Pillar(BaseModel):
     state: str
     pillar_station_id: str
     last_update: str
-    id_dron_station:str|None
+    id_dron_station: str | None
 
 
 class PillarStation(BaseModel):

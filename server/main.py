@@ -1,9 +1,17 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
-from frontend import BaseMessage, GreetingMessage, Pillar, PillarStation, DronStation, Dron
+from frontend import (
+    Pillar,
+    PillarStation,
+)
 from pillar_station import StatusMessage as StatusMessagePillarStation, ChangeForm
-from dron_station import StatusMessage as StatusMessageDronStation, RegisterForm, AllStruct
+from dron_station import (
+    StatusMessage as StatusMessageDronStation,
+    RegisterForm,
+    AllStruct,
+    DronStateChange,
+)
 from base_models import Coordinates
 from base_inputs import EnterData, EnterForm
 
@@ -11,8 +19,6 @@ from managers import Manager
 from db_work import (
     get_all_pillars,
     get_all_pillar_stations,
-    get_all_dron_stations,
-    get_drons_by_station,
     get_id_dron_station_by_pillar,
 )
 from datetime import datetime
@@ -42,7 +48,7 @@ async def websocket_endpoint_pillar_station(websocket: WebSocket):
             )
             await websocket.close(code=1003)
             return
-        
+
         ent = EnterForm(**data.data)
         client_id = await manager.pillar_station_enter(websocket, ent.id, pool)
         if client_id is None:
@@ -53,17 +59,15 @@ async def websocket_endpoint_pillar_station(websocket: WebSocket):
             match data.event:
                 case "change_lamp_state":
                     ch = ChangeForm(**data.data)
-                    print(await manager.change_pillar(uuid.UUID(ch.id), ch.status, pool))
-                # case "lamp_off":
-                    # await manager.pillar_lamp_off(client_id, str(data.get("id_pillar")), pool)
+                    await manager.change_pillar(uuid.UUID(ch.id), ch.status, pool)
                 case _:
                     pass
 
     except WebSocketDisconnect:
         print(f"Клиент столб станция/{client_id} отключился")
     except ValidationError as exc:
-        await websocket.send_json(
-            StatusMessagePillarStation(status="Err", message="You lost fields").model_dump()
+        await manager._send_status_pillar_station(
+            websocket, status="Err", message="You lost fields"
         )
         print(exc)
     except Exception as e:
@@ -96,22 +100,29 @@ async def websocket_endpoint_dron_station(websocket: WebSocket):
                 client_id = await manager.dron_station_register(websocket, reg, pool)
         if client_id is None:
             return
+        await manager.get_drones(client_id, pool)
+        await manager.get_pillars(client_id, pool)
 
         while True:
             data = EnterData(**await websocket.receive_json())
             match data.event:
-                # case "get_drons":
-                #     await manager.get_drones(client_id)
-                # case "get_pillars":
-                #     await manager.get_pillars(client_id)
+                case "change_dron_state":
+                    d_s = DronStateChange(**data.data)
+                    await manager.change_dron_state(
+                        client_id,
+                        uuid.UUID(d_s.id),
+                        d_s.status,
+                        d_s.last_coordinates,
+                        pool,
+                    )
                 case _:
                     pass
 
     except WebSocketDisconnect:
         print(f"Клиент дрон станция/{client_id} отключился")
     except ValidationError as exc:
-        await websocket.send_json(
-            StatusMessageDronStation(status="Err", message="You lost fields").model_dump()
+        await manager._send_status_dron_station(
+            websocket, status="Err", message="You lost fields"
         )
         print(exc)
     except Exception as e:
@@ -127,58 +138,52 @@ async def websocket_endpoint_frontend(websocket: WebSocket):
     await websocket.accept()
     try:
         await manager.send_first_message_frontend(websocket, pool)
-
         while True:
-            data = await websocket.receive_json()
-            event = data.get("event")
-            match event:
-                case "change_lamp":
-                    pass
-                    # await manager.register_drons(client_id)
-        #         case "get_drons":
-        #             await manager.get_drones(client_id)
-        #         case "get_pillars":
-        #             await manager.get_pillars(client_id)
+            data = EnterData(**await websocket.receive_json())
+            match data.event:
+                case "change_lamp_state":
+                    ch = ChangeForm(**data.data)
+                    await manager.change_pillar(uuid.UUID(ch.id), ch.status, pool)
                 case _:
                     pass
 
     except WebSocketDisconnect:
         print(f"Клиент дрон станция/{client_id} отключился")
     except ValidationError as exc:
-        # await websocket.send_json(
-        #     StatusMessage(status="Err", message="You lost fields").model_dump()
-        # )
+        await manager._send_status_frontend(
+            websocket, status="Err", message="You lost fields"
+        )
         print(exc)
     except Exception as e:
         print(f"Ошибка WebSocket: {e}")
     finally:
         await pool.close()
 
+
 @app.get("/all-pillars")
 async def all_pillars_get():
     pool = await asyncpg.create_pool(dsn=db_str_connection)
     async with pool.acquire() as conn:
-
-        return AllStruct( pillars=[
-                            Pillar(
-                                id=str(p.id),
-                                coordinates=Coordinates(
-                                    x=int(p.latitude), y=int(p.longitude)
-                                ),
-                                state=p.state,
-                                pillar_station_id=str(p.id_pillar_station),
-                                last_update=datetime.now().isoformat(),
-                                id_dron_station=None if (await get_id_dron_station_by_pillar(conn, p.id)) is None else str(await get_id_dron_station_by_pillar(conn, p.id))
-                            )
-                            for p in await get_all_pillars(conn)
-                        ],
-                        pillar_stations=[
-                            PillarStation(
-                                id=str(p_s.id),
-                                coordinates=Coordinates(
-                                    x=int(p_s.latitude), y=int(p_s.longitude)
-                                ),
-                                is_alive=p_s.is_alive,
-                            )
-                            for p_s in await get_all_pillar_stations(conn)
-                        ],).model_dump()
+        return AllStruct(
+            pillars=[
+                Pillar(
+                    id=str(p.id),
+                    coordinates=Coordinates(x=int(p.latitude), y=int(p.longitude)),
+                    state=p.state,
+                    pillar_station_id=str(p.id_pillar_station),
+                    last_update=datetime.now().isoformat(),
+                    id_dron_station=None
+                    if (await get_id_dron_station_by_pillar(conn, p.id)) is None
+                    else str(await get_id_dron_station_by_pillar(conn, p.id)),
+                )
+                for p in await get_all_pillars(conn)
+            ],
+            pillar_stations=[
+                PillarStation(
+                    id=str(p_s.id),
+                    coordinates=Coordinates(x=int(p_s.latitude), y=int(p_s.longitude)),
+                    is_alive=p_s.is_alive,
+                )
+                for p_s in await get_all_pillar_stations(conn)
+            ],
+        ).model_dump()

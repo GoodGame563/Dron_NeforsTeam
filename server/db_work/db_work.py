@@ -9,6 +9,7 @@ from .models import (
     History,
     PillarForStation,
 )
+from typing import Optional
 
 
 def _to_pillar_station(row) -> PillarStation:
@@ -88,6 +89,15 @@ async def get_pillar_station(
     conn: asyncpg.Connection, id_: uuid.UUID
 ) -> PillarStation | None:
     row = await conn.fetchrow("SELECT * FROM get_pillar_station($1)", id_)
+    return _to_pillar_station(row) if row else None
+
+
+async def get_pillar_station_by_pillar_id(
+    conn: asyncpg.Connection, pillar_id: uuid.UUID
+) -> PillarStation | None:
+    row = await conn.fetchrow(
+        "SELECT * FROM get_pillar_station_by_pillar_id($1)", pillar_id
+    )
     return _to_pillar_station(row) if row else None
 
 
@@ -336,8 +346,8 @@ async def update_dron(
     conn: asyncpg.Connection,
     id_: uuid.UUID,
     status: str,
-    last_latitude: float,
-    last_longitude: float,
+    last_latitude: Optional[float],
+    last_longitude: Optional[float],
     id_dron_station: uuid.UUID,
 ) -> None:
     await conn.execute(
