@@ -3,9 +3,9 @@ using UnityEngine;
 
 public class Coordinates
 {
-    [JsonProperty("latitude")]
-    public float Latitude { get; set; }
+    [JsonProperty("x")]
+    public float X { get; set; }
 
-    [JsonProperty("longtiude")]
-    public float Longtiude { get; set; }
+    [JsonProperty("y")]
+    public float Y { get; set; }
 }

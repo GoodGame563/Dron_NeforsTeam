@@ -15,6 +15,7 @@ public class DroneStationClient : MonoBehaviour
     public Action<List<string>> OnRegisterDronsResponse;
     public Action<List<Models.Drone>> OnGetDronsResponse;
     public Action<GetPillarsMessage> OnGetPillarsResponse;
+    public Action<ChangePillarMessage> OnChagePillarMessage;
     public Action<string> OnError;
     
     private void Awake ()
@@ -57,11 +58,6 @@ public class DroneStationClient : MonoBehaviour
     public async Task GetDronsRequest()
     {
         await SendEventOnly("get_drons");
-    }
-
-    public async Task GetPillarsRequest()
-    {
-        await SendEventOnly("get_pillars");
     }
 
     private async Task SendEventOnly(string eventName)
