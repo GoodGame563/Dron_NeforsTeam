@@ -1,7 +1,3 @@
-/**
- * Форматирует разницу между now и date в читаемую строку.
- * Примеры: "5 минут назад", "3 часа назад", "12 дней назад"
- */
 export function formatRelativeTime(date: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -14,7 +10,6 @@ export function formatRelativeTime(date: Date): string {
   if (diffHours < 24) return `${diffHours} ч. назад`;
   if (diffDays < 30) return `${diffDays} дн. назад`;
 
-  // Для старых дат показываем конкретную дату
   return date.toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "short",

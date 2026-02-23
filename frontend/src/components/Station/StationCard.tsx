@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import { Bolt, Build, FlightTakeoff } from "@mui/icons-material";
 
+import { useDronesCountByStatus } from "../../hooks/useDronesCountByStatus.ts";
 import { StatItem } from "./StatItem.tsx";
 import type { DronStation } from "../../types/type.ts";
 
@@ -18,17 +19,9 @@ interface StationCardProps {
 }
 
 export function StationCard({ station, selected, onSelect }: StationCardProps) {
-  const brokenDrones = station.drons.filter(
-    (drone) => drone.status == "broken",
-  ).length;
-
-  const availableDrones = station.drons.filter(
-    (drone) => drone.status == "in_station",
-  ).length;
-
-  const busyDrones = station.drons.filter(
-    (drone) => drone.status == "fly",
-  ).length;
+  const brokenDrones = useDronesCountByStatus(station.drons, "broken");
+  const availableDrones = useDronesCountByStatus(station.drons, "in_station");
+  const busyDrones = useDronesCountByStatus(station.drons, "fly");
 
   return (
     <Card
