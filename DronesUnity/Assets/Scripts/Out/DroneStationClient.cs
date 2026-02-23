@@ -17,7 +17,7 @@ public class DroneStationClient : MonoBehaviour
     public Action<GetPillarsMessage> OnGetPillarsResponse;
     public Action<string> OnError;
     
-    private void Start()
+    private void Awake ()
     {
         _ws = this.GetComponent<WSServer>();
     }
@@ -46,7 +46,7 @@ public class DroneStationClient : MonoBehaviour
             ClientId = id,
         };
         var jsonMessage = JsonConvert.SerializeObject(enterMessage);
-        await _ws.Send(jsonMessage);
+        await _ws.Send(jsonMessage);//
     }
 
     public async Task RegisterDrons()

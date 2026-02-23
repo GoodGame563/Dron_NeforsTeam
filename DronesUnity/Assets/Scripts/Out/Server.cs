@@ -5,14 +5,22 @@ public class Server : MonoBehaviour
     [SerializeField] private DronesStation _dronesStation;
     [SerializeField] private PillarStation[] _pillarsStation;
     [SerializeField] private PillarDebug _pillarDebug;
+    [Space]
+    [SerializeField] private WSServer _wsServer;
 
-    private void Start()
+    private void OnEnable()
     {
-        Initialize();
+        _wsServer.OnConnected += Initialize;
+    }
+
+    private void OnDisable()
+    {
+        _wsServer.OnConnected -= Initialize;
     }
 
     public void Initialize()
     {
+
         int lastIndex = 0;
 
         //Инициализирует задавая каждой столб-станции
@@ -26,6 +34,7 @@ public class Server : MonoBehaviour
         _pillarDebug.Initialize(_pillarsStation);
 
         SubscribeAllPillarsStation(true);
+        _wsServer.OnConnected -= Initialize;
     }
 
     private void PillarBroken(string brokenId)
@@ -50,4 +59,6 @@ public class Server : MonoBehaviour
             }
         }
     }
+
+
 }

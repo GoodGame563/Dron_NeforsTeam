@@ -1,7 +1,5 @@
 using Models;
 using System.Collections.Generic;
-using TMPro;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 [RequireComponent(typeof(DroneStationClient))]
@@ -21,15 +19,18 @@ public class DronesStation : MonoBehaviour
     private Queue<Vector3> _brokenPillarsQueue = new();
 
     private string _id;
-    private List<string> _dronesList;
+    private List<string> _dronesIDList;
+    private List<Models.Drone> _dronesModels;
+
+    private GetPillarsMessage _pillarsResponseMesseage;
 
     private bool _isSubscribetToDrones;
 
-    private void Start()
+    private void Awake()
     {
         _client = GetComponent<DroneStationClient>();
 
-        if (_id == null)
+        if (_id == string.Empty || true) //id всегда при запуске пустое
         {
             _client.RegisterStation(new Models.RegisterMessage()
             {
@@ -47,21 +48,58 @@ public class DronesStation : MonoBehaviour
         }
     }
 
+    #region OnEnable-OnDisable
+
     private void OnEnable()
     {
         _client.OnRegisterStationResponse += RegisterStationResponse;
+        _client.OnRegisterDronsResponse += RegisterDrones;
+        _client.OnGetDronsResponse += GetDronesModel;
+        _client.OnGetPillarsResponse += GetPillarsResponse;
+        _client.OnError += ServError;
     }
 
-    #region Client
+    private void OnDisable()
+    {
+        _client.OnRegisterStationResponse -= RegisterStationResponse;
+        _client.OnRegisterDronsResponse -= RegisterDrones;
+        _client.OnGetDronsResponse -= GetDronesModel;
+        _client.OnGetPillarsResponse -= GetPillarsResponse;
+        _client.OnError -= ServError;
+    }
+
+    #endregion
+
+    #region Subscribe to Client
 
     private void RegisterStationResponse(string uuid)
     {
         _id = uuid;
+        Debug.Log($"@Drone Station gettet UUID: {uuid}");
     }
         
     private void RegisterDrones(List<string> dronesList)
     {
-        _dronesList = dronesList;
+        _dronesIDList = dronesList;
+        Debug.Log($"@Drone Station gettet dronesList: {dronesList.Count}");
+    }
+
+    private void GetDronesModel(List<Models.Drone> models)
+    {
+        _dronesModels = models;
+        Debug.Log($"@Drone Station gettet drones model: Count: {_dronesModels.Count}");
+    }
+
+    private void GetPillarsResponse(GetPillarsMessage message)
+    {
+        _pillarsResponseMesseage = message;
+        Debug.Log(message);
+        Debug.Log($"@Drone Station gettet pillar response: Pillars count: {_pillarsResponseMesseage.Pillars.Count}");
+    }
+
+    private void ServError(string errorMesseage)
+    {
+        Debug.LogError($"@Drone station: {errorMesseage}");
     }
 
     #endregion
@@ -80,9 +118,9 @@ public class DronesStation : MonoBehaviour
 
 
         int newId = 0;
-        for (int i = 0; i < _dronesList.Count; i++)
+        for (int i = 0; i < _dronesIDList.Count; i++)
         {
-            _drones[i].Initialize(_dronesList[i], transform.position);
+            _drones[i].Initialize(_dronesIDList[i], transform.position);
         }
 
     }
@@ -96,11 +134,13 @@ public class DronesStation : MonoBehaviour
         SendDrone(targetPillarPosition);
     }
 
+    #region Drone cooperation
+
     public void GoHomeAll()
     {
         foreach (Drone drone in _drones)
         {
-            drone.GoHome();
+            drone.GoChangeLamp();
         }
     }
 
@@ -138,10 +178,14 @@ public class DronesStation : MonoBehaviour
 
         if (drone.IsHasBrokenLamp)
         {
-            drone.TakeWorkingLamp();
+            drone.ChangeLampInStation();
             
         }
     }
+
+    #endregion
+
+    #region Get drone
 
     private Drone GetDroneByID(string ID)
     {
@@ -154,6 +198,27 @@ public class DronesStation : MonoBehaviour
         }
         return null;
     }
+
+    private Drone GetMostChargedDrone()
+    {
+        float maxChargeValue = float.MinValue;
+        Drone mostChargedDrone = null;
+
+        foreach (Drone drone in _drones)
+        {
+            if (drone.CurrentDroneState == Drone.DronState.Ready&&
+                drone.BatteryChargeLevel > maxChargeValue)
+            {
+                mostChargedDrone = drone;
+                maxChargeValue = drone.BatteryChargeLevel;
+            }
+        }
+
+        return mostChargedDrone;
+    }
+
+    #endregion
+
     private void DroneReady(string droneID)
     {
         Debug.LogError("Drone ready");
@@ -175,23 +240,6 @@ public class DronesStation : MonoBehaviour
         SendDrone(brokenPillarPos);
     }
 
-    private Drone GetMostChargedDrone()
-    {
-        float maxChargeValue = float.MinValue;
-        Drone mostChargedDrone = null;
-
-        foreach (Drone drone in _drones)
-        {
-            if (drone.CurrentDroneState == Drone.DronState.Charging&&
-                drone.BatteryChargeLevel > maxChargeValue)
-            {
-                mostChargedDrone = drone;
-                maxChargeValue = drone.BatteryChargeLevel;
-            }
-        }
-
-        return mostChargedDrone;
-    }
 
     private void SubscribeAllDrones(bool subscribe)
     {
@@ -199,7 +247,7 @@ public class DronesStation : MonoBehaviour
         {
             foreach (Drone drone in _drones)
             {
-                if (drone.CurrentDroneState == Drone.DronState.Charging)
+                if (drone.CurrentDroneState == Drone.DronState.Ready)
                 {
                     drone.OnDroneChargetEnought += DroneReady;
                 }

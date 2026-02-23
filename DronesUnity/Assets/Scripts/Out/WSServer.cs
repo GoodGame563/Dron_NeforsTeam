@@ -10,14 +10,16 @@ public class WSServer : MonoBehaviour
     private WebSocket _ws;
 
     public Action<string> OnMessageReceive;
+    public Action OnConnected;
 
     private async void Start()
     {
-        _ws = new WebSocket(url);
+           _ws = new WebSocket(url);
 
         _ws.OnOpen += () =>
         {
             Debug.Log("[WsClient] Connected");
+            OnConnected?.Invoke();
         };
 
         _ws.OnClose += (code) =>
@@ -46,13 +48,15 @@ public class WSServer : MonoBehaviour
 #endif
     }
 
+
     private async void OnDestroy()
+    //private void OnDestroy()
     {
         if (_ws != null)
             await _ws.Close();
     }
 
-    public async Task Send(string message)
+public async Task Send(string message)
     {
         if (_ws == null || _ws.State != WebSocketState.Open)
         {

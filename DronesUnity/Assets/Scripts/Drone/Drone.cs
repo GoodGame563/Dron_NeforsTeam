@@ -6,9 +6,11 @@ public class Drone : MonoBehaviour
 {
     public enum DronState
     {
-        Charging,
+        Ready,
         Flying,
-        Broken
+        Broken,
+        GoChangeLamp,
+        HaveWorkingLamp
     }
 
     public enum DroneLampHolderState
@@ -62,23 +64,37 @@ public class Drone : MonoBehaviour
     public event Action<string> OnTakingBrokenAnimEnded;
     public event Action<string> OnTakingWorkingAnimEnded;
 
+    private Vector3 _horizontalVelocity;
+    private float _verticalVelocity;
+
+    float _rotationSpeed = 120f;
+    private Vector3 _descendRotationVelocity;
+
     private Coroutine _flightCoroutine;
     private Coroutine _hoverCoroutine;
+    private Coroutine _moveToAnimPosCoroutine;
+
     private bool _isHovering = false;
     private bool _isGoHome;
     public bool IsHasBrokenLamp { get; private set; }
 
     private Animator _anim;
 
+    private void Awake()
+    {
+        _rb = GetComponent<Rigidbody>();
+
+        _anim = GetComponent<Animator>();
+    }
+
     public void Initialize(string newId, Vector3 stationCoordinates)
     {
         _stationCoordinates = stationCoordinates;
         ID = newId;
-        _rb = GetComponent<Rigidbody>();
-        CurrentDroneState = DronState.Charging;
+
+        CurrentDroneState = DronState.Ready;
         CurrentFlightState = FlightSubState.Hovering; // Начальное состояние - зависание на земле
 
-        _anim = GetComponent<Animator>();
         Debug.Log($"Drone {ID} Initialized");
     }
 
@@ -101,7 +117,20 @@ public class Drone : MonoBehaviour
 
     public void GoHome()
     {
+        _isGoHome = true;
         Vector3 stationPos = new(_stationCoordinates.x, _stationCoordinates.y, _stationCoordinates.z);
+        CurrentDroneState = DronState.Ready;
+        SetTarget(stationPos, false);
+        Launch();
+        Debug.LogWarning($"Drone ({ID}) go home");
+        _anim.applyRootMotion = true;
+    }
+
+    public void GoChangeLamp()
+    {
+        _isGoHome = true;
+        Vector3 stationPos = new(_stationCoordinates.x, _stationCoordinates.y, _stationCoordinates.z);
+        CurrentDroneState = DronState.GoChangeLamp;
         SetTarget(stationPos, false);
         Launch();
         Debug.LogWarning($"Drone ({ID}) go home");
@@ -121,18 +150,21 @@ public class Drone : MonoBehaviour
             _anim.SetTrigger("TakeLamp");
             IsHasBrokenLamp = true;
             CurrentLampCoord = TargetCoordinates;
+            Debug.Log($"CurrentLampCoord {CurrentLampCoord}");
         }
         _anim.applyRootMotion = false;
     }
 
-    public void TakeWorkingLamp()
+    public void ChangeLampInStation()
     {
         _anim.SetTrigger("ChangeLamp");
+
         IsHasBrokenLamp = false;
     }
 
-    public void OnChangeWorkingLampAnimEnded()
+    public void OnChangeToWorkingLampAnimEnded()
     {
+        CurrentDroneState = DronState.HaveWorkingLamp;
         SetTarget(CurrentLampCoord);
         
         Launch();
@@ -150,7 +182,7 @@ public class Drone : MonoBehaviour
 
     private IEnumerator FlySequence()
     {
-        CurrentDroneState = DronState.Flying;
+        //CurrentDroneState = DronState.Flying;
 
         // Шаг 1: Поднимаемся на заданную высоту
         SetFlightState(FlightSubState.TakingOff);
@@ -167,31 +199,38 @@ public class Drone : MonoBehaviour
         Debug.Log($"Дрон {ID}: Летим к цели {TargetCoordinates}");
         yield return StartCoroutine(FlyToTarget(TargetCoordinates));
 
-        // Шаг 3: Спускаемся на высоту лампы (_lampHeight)
+        //// Шаг 3: Спускаемся на высоту лампы (_lampHeight)
+        //SetFlightState(FlightSubState.Descending);
+        //Debug.Log($"Дрон {ID}: Спускаемся на высоту лампы {_lampHeight}");
+        //StopHovering();
+        //yield return StartCoroutine(DescendToLampHeight());
+
         SetFlightState(FlightSubState.Descending);
-        Debug.Log($"Дрон {ID}: Спускаемся на высоту лампы {_lampHeight}");
         StopHovering();
-        yield return StartCoroutine(DescendToLampHeight());
 
         // Шаг 4: Зависаем на высоте лампы
         SetFlightState(FlightSubState.Hovering);
         Debug.Log($"Дрон {ID}: Зависаем на высоте лампы в точке назначения");
-        StartHovering();
+        //StartHovering();
 
         Debug.Log($"Дрон {ID}: Достиг цели и находится на высоте лампы!");
-        CurrentDroneState = DronState.Charging;
-        SetFlightState(FlightSubState.Hovering);
-
+        //CurrentDroneState = DronState.Charging;
+        //SetFlightState(FlightSubState.Hovering);
+        
         if (_isGoHome)
         {
-            if (IsHasBrokenLamp)
+            if (CurrentDroneState == DronState.GoChangeLamp)
             {
                 OnDroneNeedChangingLamp?.Invoke(ID);
+                CurrentDroneState = DronState.HaveWorkingLamp;
+                Debug.Log($"Drone need to change lamp");
             }
             else
             {
+                CurrentDroneState = DronState.Ready;
                 OnDroneReady?.Invoke(ID);
-                //здесь он должен начать ждать
+                Debug.Log($"Drone landed to station and now ready");
+                //здесь он должен начать ждать след задания
             }
         }
         else
@@ -202,109 +241,199 @@ public class Drone : MonoBehaviour
 
     #region Fly process
 
+    public void MoveToStartAnimPos(Transform targetTransform, float moveSpeed = 5f, float rotationSpeed = 120f)
+    {
+        if (_moveToAnimPosCoroutine != null)
+            StopCoroutine(_moveToAnimPosCoroutine);
+
+        _moveToAnimPosCoroutine = StartCoroutine(MoveToStartAnimPosCoroutine(targetTransform, moveSpeed, rotationSpeed));
+    }
+
+    private IEnumerator MoveToStartAnimPosCoroutine(Transform targetTransform, float moveSpeed, float rotationSpeed)
+    {
+        Vector3 velocity = Vector3.zero;
+
+        while (Vector3.Distance(transform.position, targetTransform.position) > 0.05f)
+        {
+            // Плавное перемещение
+            transform.position = Vector3.SmoothDamp(
+                transform.position,
+                targetTransform.position,
+                ref velocity,
+                0.6f,
+                moveSpeed
+            );
+
+            // Плавный поворот только по Y
+            Vector3 direction = Vector3.zero;
+            direction.y = 0; // игнорируем вертикаль
+            if (direction.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRotation = Quaternion.identity;
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation,
+                    targetRotation,
+                    rotationSpeed * Time.deltaTime
+                );
+            }
+
+            yield return null;
+        }
+
+        // Точная позиция и поворот в конце
+        transform.position = targetTransform.position;
+        Vector3 finalDir = (targetTransform.position - transform.position).normalized;
+        finalDir.y = 0;
+        if (finalDir.sqrMagnitude > 0.001f)
+            transform.rotation = Quaternion.identity;
+
+        _moveToAnimPosCoroutine = null;
+        OnDroneReachedTarget?.Invoke(ID);
+    }
+
     private IEnumerator LiftToHeight(float targetHeight)
     {
         StopHovering();
 
-        Vector3 startPosition = transform.position;
-        Vector3 targetPosition = new Vector3(startPosition.x, targetHeight, startPosition.z);
-        float journeyLength = Vector3.Distance(startPosition, targetPosition);
-        float startTime = Time.time;
-
         while (Mathf.Abs(transform.position.y - targetHeight) > _hoverHeightTolerance)
         {
-            float distanceCovered = (Time.time - startTime) * _heightSpeed;
-            float fractionOfJourney = distanceCovered / journeyLength;
+            float y = Mathf.SmoothDamp(
+                transform.position.y,
+                targetHeight,
+                ref _verticalVelocity,
+                0.6f,
+                _heightSpeed
+            );
 
-            // Используем Lerp для плавного подъема
-            Vector3 newPosition = Vector3.Lerp(startPosition, targetPosition, fractionOfJourney);
-
-            // Проверяем, не превысили ли мы целевую высоту
-            if (Mathf.Abs(newPosition.y - targetHeight) < 0.01f)
-            {
-                newPosition.y = targetHeight;
-            }
-
-            transform.position = newPosition;
+            transform.position = new Vector3(
+                transform.position.x,
+                y,
+                transform.position.z
+            );
 
             yield return null;
         }
 
-        // Фиксируем конечную позицию
-        Vector3 finalPosition = transform.position;
-        finalPosition.y = targetHeight;
-        transform.position = finalPosition;
+        transform.position = new Vector3(
+            transform.position.x,
+            targetHeight,
+            transform.position.z
+        );
     }
 
     private IEnumerator DescendToLampHeight()
     {
-        float startHeight = transform.position.y;
-        float targetHeight;
-        if (!IsHasBrokenLamp)
+        StopHovering();
+
+        float targetHeight = !IsHasBrokenLamp ? _lampHeight : 5f;
+
+        Vector3 targetPosition = new Vector3(
+            TargetCoordinates.x,
+            targetHeight,
+            TargetCoordinates.z
+        );
+
+        while (Vector3.Distance(transform.position, targetPosition) > _stopDistance)
         {
-            targetHeight = _lampHeight;
-        }else
-        {
-            //height of drone-station
-            targetHeight = 5f;
-        }
-        Vector3 targetPosition = new Vector3(TargetCoordinates.x, targetHeight, TargetCoordinates.z);
-        _rb.isKinematic = true;
+            // 1️⃣ Плавный спуск
+            float y = Mathf.SmoothDamp(
+                transform.position.y,
+                targetHeight,
+                ref _verticalVelocity,
+                0.6f,
+                _heightSpeed
+            );
 
+            transform.position = new Vector3(
+                TargetCoordinates.x,
+                y,
+                TargetCoordinates.z
+            );
 
-        float journeyLength = Mathf.Abs(startHeight - targetHeight);
-        float startTime = Time.time;
-
-        while (Mathf.Abs(transform.position.y - targetHeight) > _hoverHeightTolerance)
-        {
-            float distanceCovered = (Time.time - startTime) * _heightSpeed;
-            float fractionOfJourney = distanceCovered / journeyLength;
-
-            // Используем Lerp для плавного спуска
-            Vector3 newPosition = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime);
-
-            // Сохраняем X и Z координаты (не меняем их во время спуска)
-            newPosition.x = TargetCoordinates.x;
-            newPosition.z = TargetCoordinates.z;
-
-            transform.position = newPosition;
+            // 2️⃣ Поворот только по Y
+            Vector3 lookDir = (TargetCoordinates - transform.position).normalized;
+            lookDir.y = 0; // игнорируем вертикаль
+            if (lookDir.sqrMagnitude > 0.001f)
+            {
+                    Quaternion targetRotation = Quaternion.Euler(Vector3.zero);
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation,
+                    targetRotation,
+                    _rotationSpeed * Time.deltaTime
+                );
+            }
 
             yield return null;
         }
 
-        // Фиксируем конечную позицию
-        Vector3 finalPosition = transform.position;
-        finalPosition.y = targetHeight;
-        finalPosition.x = TargetCoordinates.x;
-        finalPosition.z = TargetCoordinates.z;
-        transform.position = finalPosition;
+
+        // 3️⃣ Финальная точка и поворот
+        transform.position = targetPosition;
+        Vector3 finalDir = (TargetCoordinates - transform.position).normalized;
+        finalDir.y = 0;
+        if (finalDir.sqrMagnitude > 0.001f)
+            transform.rotation = Quaternion.Euler(0, 0, 0);
     }
 
     private IEnumerator FlyToTarget(Vector3 target)
     {
         StopHovering();
 
-        Vector3 startPosition = transform.position;
-        Vector3 targetPosition = new Vector3(target.x, _reservedFlyHight, target.z);
 
-        float journeyLength = Vector3.Distance(startPosition, targetPosition);
-        float startTime = Time.time;
 
-        while (Mathf.Abs(Vector3.Distance(transform.position, targetPosition)) > 0.5f)
+        Vector3 targetXZ = new Vector3(
+            target.x,
+            transform.position.y, // фиксированная высота
+            target.z
+        );
+
+        while (Vector2.Distance(
+                   new Vector2(transform.position.x, transform.position.z),
+                   new Vector2(targetXZ.x, targetXZ.z)) > _stopDistance)
         {
-            float distanceCovered = (Time.time - startTime) * _flightSpeed;
-            float fractionOfJourney = distanceCovered / journeyLength;
+            // 1️⃣ Плавное перемещение XZ
+            Vector3 newXZ = Vector3.SmoothDamp(
+                new Vector3(transform.position.x, 0, transform.position.z),
+                new Vector3(targetXZ.x, 0, targetXZ.z),
+                ref _horizontalVelocity,
+                0.8f,
+                _flightSpeed
+            );
 
-            // Используем Lerp для плавного полета по прямой
-            Vector3 newPosition = Vector3.Lerp(startPosition, targetPosition, fractionOfJourney);
+            transform.position = new Vector3(
+                newXZ.x,
+                _reservedFlyHight,
+                newXZ.z
+            );
 
-            // Сохраняем заданную высоту
-            newPosition.y = _reservedFlyHight;
-
-            transform.position = newPosition;
+            // 2️⃣ Поворот только по оси Y
+            Vector3 direction = (TargetCoordinates - transform.position).normalized;
+            direction.y = 0; // игнорируем Y
+            if (direction.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(direction);
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation,
+                    targetRotation,
+                    _rotationSpeed * Time.deltaTime
+                );
+            }
 
             yield return null;
         }
+
+        // 3️⃣ Финальная точка и точный поворот
+        transform.position = new Vector3(
+            target.x,
+            _reservedFlyHight,
+            target.z
+        );
+
+        Vector3 finalDir = (TargetCoordinates - transform.position).normalized;
+        finalDir.y = 0;
+        if (finalDir.sqrMagnitude > 0.001f)
+            transform.rotation = Quaternion.LookRotation(finalDir);
+        OnDroneReachedTarget?.Invoke(ID);
     }
 
     #endregion
@@ -326,7 +455,7 @@ public class Drone : MonoBehaviour
     private void StopHovering()
     {
         _isHovering = false;
-        _rb.isKinematic = false;
+        //_rb.isKinematic = false;
         if (_hoverCoroutine != null)
         {
             StopCoroutine(_hoverCoroutine);
@@ -393,7 +522,13 @@ public class Drone : MonoBehaviour
 
     public void SetTarget(Vector3 targetCoordinates, bool doRandom = true)
     {
-        _isGoHome = (targetCoordinates == _stationCoordinates);
+        if (targetCoordinates != _stationCoordinates)
+        {
+            CurrentLampCoord = targetCoordinates;
+
+
+            Debug.Log($"CurrentLampCoord {CurrentLampCoord}");
+        }
 
         float factorX = 0f;
         float factorZ = 0f;

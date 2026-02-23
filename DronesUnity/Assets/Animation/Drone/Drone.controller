@@ -8,7 +8,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: TakeLamp
-  m_Speed: 1
+  m_Speed: 3
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: -4371984239734456185}
@@ -276,7 +276,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: SetLamp
-  m_Speed: 1
+  m_Speed: 3
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: 3143602653482266243}
@@ -303,7 +303,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: ChangeLamp
-  m_Speed: 1
+  m_Speed: 3
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: -7655722486528456464}
