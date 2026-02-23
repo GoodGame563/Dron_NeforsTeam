@@ -1,5 +1,9 @@
 **/.env
+<<<<<<< HEAD
 DronesUnity/Library
 DronesUnity/Logs
 DronesUnity/UserSettings
 DronesUnity/*.csproj
+=======
+postgres_data
+>>>>>>> a74fde2cdb0e7be7f0cd2713e741385102fd2013
