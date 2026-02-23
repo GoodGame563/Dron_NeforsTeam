@@ -9,17 +9,26 @@ import {
 import { Bolt, Build, FlightTakeoff } from "@mui/icons-material";
 
 import { StatItem } from "./StatItem.tsx";
-import type { Station } from "../../types/type.ts";
+import type { DronStation } from "../../types/type.ts";
 
 interface StationCardProps {
-  station: Station;
+  station: DronStation;
   selected: boolean;
-  onSelect: (station: Station) => void;
+  onSelect: (station: DronStation) => void;
 }
 
 export function StationCard({ station, selected, onSelect }: StationCardProps) {
-  const busyDrones =
-    station.totalDrones - station.availableDrones - station.brokenDrones;
+  const brokenDrones = station.drons.filter(
+    (drone) => drone.status == "broken",
+  ).length;
+
+  const availableDrones = station.drons.filter(
+    (drone) => drone.status == "in_station",
+  ).length;
+
+  const busyDrones = station.drons.filter(
+    (drone) => drone.status == "fly",
+  ).length;
 
   return (
     <Card
@@ -56,17 +65,15 @@ export function StationCard({ station, selected, onSelect }: StationCardProps) {
                   borderRadius: "50%",
                   flexShrink: 0,
                   bgcolor:
-                    station.availableDrones > 0
-                      ? "success.main"
-                      : "warning.main",
+                    availableDrones > 0 ? "success.main" : "warning.main",
                 }}
               />
               <Typography variant="body2" fontWeight={500} noWrap>
-                {station.name}
+                {station.id}
               </Typography>
             </Box>
             <Chip
-              label={`${station.lampCount} фонарей`}
+              label={`${station.total_lamps_count} фонарей`}
               size="small"
               sx={{ fontSize: 10, height: 18, color: "text.secondary" }}
             />
@@ -85,13 +92,9 @@ export function StationCard({ station, selected, onSelect }: StationCardProps) {
           >
             <StatItem
               icon={<Bolt sx={{ fontSize: 13 }} />}
-              value={station.availableDrones}
+              value={availableDrones}
               label="свободных"
-              color={
-                station.availableDrones > 0
-                  ? "#34d399"
-                  : "rgba(255,255,255,0.3)"
-              }
+              color={availableDrones > 0 ? "#34d399" : "rgba(255,255,255,0.3)"}
             />
             <StatItem
               icon={<FlightTakeoff sx={{ fontSize: 13 }} />}
@@ -101,11 +104,9 @@ export function StationCard({ station, selected, onSelect }: StationCardProps) {
             />
             <StatItem
               icon={<Build sx={{ fontSize: 13 }} />}
-              value={station.brokenDrones}
+              value={brokenDrones}
               label="сломано"
-              color={
-                station.brokenDrones > 0 ? "#f87171" : "rgba(255,255,255,0.3)"
-              }
+              color={brokenDrones > 0 ? "#f87171" : "rgba(255,255,255,0.3)"}
             />
           </Box>
         </CardContent>

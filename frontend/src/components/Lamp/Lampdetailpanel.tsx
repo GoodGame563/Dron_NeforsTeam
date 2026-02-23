@@ -1,38 +1,21 @@
-import {
-  Box,
-  Typography,
-  Chip,
-  Button,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
+import { Box, Typography, Chip, Button, IconButton } from "@mui/material";
 import { X, Send, Clock } from "lucide-react";
-import type { LampStatus } from "../../types/type";
+
+import { useTimePrefix } from "../../hooks/useTimePrefix";
+import { useLampStatus } from "../../hooks/useLampStatus";
+import { useSocketStore } from "../../stores/socketStore";
+import { LampIcon } from "./LampIcon";
 import { formatRelativeTime } from "../../utils/formatRelativeTime";
 
-const STATUS_CONFIG: Record<
-  LampStatus,
-  {
-    label: string;
-    color: "success" | "error" | "default";
-  }
-> = {
-  alive: { label: "Исправен", color: "success" },
-  death: { label: "Требует замены", color: "error" },
-  empty: { label: "Нет лампы", color: "default" },
-};
-
 export function LampDetailPanel() {
-  const { label, color } = STATUS_CONFIG[lamp.status];
-  const canDispatch = lamp.status === "death" || lamp.status === "empty";
-  const hasAvailableDrone = station ? station.availableDrones > 0 : false;
+  const { pillar, unsetSelectedPillar } = useSocketStore((state) => ({
+    pillar: state.selectedPillar,
+    unsetSelectedPillar: state.unselectPillar,
+  }));
+  const { label, color } = useLampStatus(pillar?.state ?? "empty");
+  const timePrefix = useTimePrefix(pillar?.state ?? "empty");
 
-  const timePrefix =
-    lamp.status === "alive"
-      ? "Работает"
-      : lamp.status === "death"
-        ? "Сломана"
-        : "Пуста";
+  if (!pillar) return null;
 
   return (
     <Box
@@ -47,7 +30,6 @@ export function LampDetailPanel() {
         gap: 2,
       }}
     >
-      {/* Иконка фонаря */}
       <Box
         sx={{
           width: 40,
@@ -62,14 +44,13 @@ export function LampDetailPanel() {
           flexShrink: 0,
         }}
       >
-        <LampIcon status={lamp.status} />
+        <LampIcon status={pillar.state} />
       </Box>
 
-      {/* Основная информация */}
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
           <Typography variant="body2" fontWeight={500}>
-            Фонарь #{lamp.id.replace("lamp-", "")}
+            Фонарь #{pillar.id.replace("lamp-", "")}
           </Typography>
           <Chip label={label} color={color} size="small" />
         </Box>
@@ -81,56 +62,35 @@ export function LampDetailPanel() {
             flexWrap: "wrap",
           }}
         >
-          {station && (
-            <Typography variant="caption" color="text.secondary">
-              {station.name}
-            </Typography>
-          )}
           <Typography variant="caption" color="text.disabled">
-            x: {Math.round(lamp.position.x)}, y: {Math.round(lamp.position.y)}
+            x: {Math.round(pillar.coordinates.x)}, y:{" "}
+            {Math.round(pillar.coordinates.y)}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
             <Clock size={11} color="rgba(255,255,255,0.3)" />
             <Typography variant="caption" color="text.disabled">
-              {timePrefix} {formatRelativeTime(lamp.updatedAt)}
+              {timePrefix} {formatRelativeTime(pillar.last_update)}
             </Typography>
           </Box>
         </Box>
       </Box>
 
-      {/* Предупреждение если нет свободных дронов */}
-      {canDispatch && !hasAvailableDrone && (
-        <Typography
-          variant="caption"
-          color="warning.main"
-          sx={{ maxWidth: 140, textAlign: "right" }}
-        >
-          Нет свободных дронов на станции
-        </Typography>
+      {pillar.dron_station_id && pillar.state != "death" && (
+        <span>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<Send size={14} />}
+            sx={{ whiteSpace: "nowrap" }}
+          >
+            {"Отправить дрона"}
+          </Button>
+        </span>
       )}
 
-      {/* Кнопка отправки */}
-      {canDispatch && (
-        <Tooltip title={!hasAvailableDrone ? "Нет свободных дронов" : ""}>
-          <span>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={onDispatch}
-              disabled={!hasAvailableDrone || isDispatching}
-              startIcon={!isDispatching && <Send size={14} />}
-              sx={{ whiteSpace: "nowrap" }}
-            >
-              {isDispatching ? "Отправляем..." : "Отправить дрона"}
-            </Button>
-          </span>
-        </Tooltip>
-      )}
-
-      {/* Закрыть */}
       <IconButton
         size="small"
-        onClick={onClose}
+        onClick={unsetSelectedPillar}
         sx={{ color: "text.secondary" }}
       >
         <X size={16} />

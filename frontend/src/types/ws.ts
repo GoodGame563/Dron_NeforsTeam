@@ -1,10 +1,11 @@
-import type { Lamp, Station } from "./type.ts";
+import type { Pillar, DronStation, PillarStation } from "./type.ts";
 
-export type StartMessage = {
-  event: "start";
+export type AllDataMessage = {
+  event: "all_data";
   data: {
-    lamps: Lamp[];
-    stations: Station[];
+    pillars: Pillar[];
+    dron_stations: DronStation[];
+    pillar_stations: PillarStation[];
   };
 };
 
@@ -15,4 +16,4 @@ export type SendDroneMessage = {
   };
 };
 
-export type WsMessage = StartMessage | SendDroneMessage;
+export type WsMessage = AllDataMessage | SendDroneMessage;

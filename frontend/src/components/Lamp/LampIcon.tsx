@@ -1,5 +1,7 @@
 import { Lightbulb, LightbulbOff, CircleOff } from "lucide-react";
 
+import type { LampStatus } from "../../types/type.ts";
+
 export function LampIcon({ status }: { status: LampStatus }) {
   if (status === "alive") return <Lightbulb size={20} color="#34d399" />;
   if (status === "death") return <LightbulbOff size={20} color="#f87171" />;

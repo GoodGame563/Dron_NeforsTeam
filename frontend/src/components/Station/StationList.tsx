@@ -2,31 +2,37 @@ import { Box, Typography, Divider } from "@mui/material";
 
 import { useSocketStore } from "../../stores/socketStore";
 import { StationCard } from "./StationCard";
-import type { Station } from "../../types/type.ts";
+import type { DronStation, Dron } from "../../types/type.ts";
 
 export function StationList() {
-  const { stations, selectedStationId, setSelectedStationId, unselectStation } =
+  const { stations, selectedStation, setSelectedStation, unselectStation } =
     useSocketStore((state) => ({
       stations: state.stations,
-      selectedStationId: state.selectedStationId,
-      setSelectedStationId: state.setSelectedStationId,
+      setSelectedStation: state.setSelectedStation,
+      selectedStation: state.selectedStation,
       unselectStation: state.unselectStation,
     }));
 
-  function handleSelect(station: Station) {
-    if (selectedStationId === station.id) {
+  function handleSelect(station: DronStation) {
+    if (selectedStation?.id === station.id) {
       unselectStation();
     } else {
-      setSelectedStationId(station.id);
+      setSelectedStation(station);
     }
   }
 
-  const totalDrones = stations.reduce((sum, s) => sum + s.totalDrones, 0);
+  const totalDrones = stations.reduce((sum, s) => sum + s.total_drone_count, 0);
   const availableDrones = stations.reduce(
-    (sum, s) => sum + s.availableDrones,
+    (sum, s) =>
+      sum +
+      s.drons.filter((drone: Dron) => drone.status == "in_station").length,
     0,
   );
-  const brokenDrones = stations.reduce((sum, s) => sum + s.brokenDrones, 0);
+  const brokenDrones = stations.reduce(
+    (sum, s) =>
+      sum + s.drons.filter((drone: Dron) => drone.status === "broken").length,
+    0,
+  );
 
   return (
     <Box
@@ -115,7 +121,7 @@ export function StationList() {
             <StationCard
               key={station.id}
               station={station}
-              selected={selectedStationId === station.id}
+              selected={selectedStation?.id === station.id}
               onSelect={handleSelect}
             />
           ))

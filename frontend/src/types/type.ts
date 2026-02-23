@@ -1,24 +1,35 @@
 export type LampStatus = "alive" | "death" | "empty";
+export type DronStatus = "broken" | "in_station" | "fly";
 
 export type Coordinates = {
   x: number;
   y: number;
 };
 
-export type Lamp = {
+export type Pillar = {
   id: string;
-  stationId: string | null;
   coordinates: Coordinates;
-  status: LampStatus;
-  updatedAt: Date;
+  state: LampStatus;
+  pillar_station_id: string | null;
+  dron_station_id: string | null;
+  last_update: Date;
 };
 
-export type Station = {
+export type PillarStation = {
   id: string;
-  name: string;
   coordinates: Coordinates;
-  totalDrones: number;
-  availableDrones: number;
-  brokenDrones: number;
-  lampCount: number;
+};
+
+export type DronStation = {
+  id: string;
+  coordinates: Coordinates;
+  total_drone_count: number;
+  total_lamps_count: number;
+  drons: Dron[];
+};
+
+export type Dron = {
+  id: string;
+  last_coordinates: Coordinates;
+  status: DronStatus;
 };

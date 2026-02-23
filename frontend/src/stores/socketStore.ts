@@ -1,15 +1,15 @@
 import { create } from "zustand";
 
-import type { Lamp, Station } from "../types/type.ts";
-import type { WsMessage, StartMessage } from "../types/ws.ts";
+import type { Pillar, DronStation } from "../types/type.ts";
+import type { WsMessage, AllDataMessage } from "../types/ws.ts";
 
 type State = {
   socket: WebSocket | null;
   isConnected: boolean;
-  lamps: Lamp[];
-  stations: Station[];
-  selectedLampId: string | null;
-  selectedStationId: string | null;
+  pillars: Pillar[];
+  stations: DronStation[];
+  selectedPillar: Pillar | null;
+  selectedStation: DronStation | null;
   isLoad: boolean;
 };
 
@@ -17,11 +17,9 @@ type Actions = {
   connect: () => void;
   disconnect: () => void;
   send: (message: WsMessage) => void;
-  updateLamp: (lamp: Lamp) => void;
-  updateStation: (station: Station) => void;
-  setSelectedLampId: (id: string) => void;
-  setSelectedStationId: (id: string) => void;
-  unselectLamp: () => void;
+  setSelectedPillar: (pillar: Pillar) => void;
+  setSelectedStation: (selectedStation: DronStation) => void;
+  unselectPillar: () => void;
   unselectStation: () => void;
 };
 
@@ -29,10 +27,10 @@ export const useSocketStore = create<State & Actions>((set, get) => ({
   socket: null,
   isLoad: true,
   isConnected: false,
-  lamps: [],
+  pillars: [],
   stations: [],
-  selectedLampId: null,
-  selectedStationId: null,
+  selectedPillar: null,
+  selectedStation: null,
 
   connect: () => {
     if (get().socket) return;
@@ -45,12 +43,13 @@ export const useSocketStore = create<State & Actions>((set, get) => ({
     ws.onopen = () => set({ isConnected: true });
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data) as WsMessage;
-      if (message.event == "start") {
+      if (message.event == "all_data") {
         set({
           isLoad: false,
-          lamps: (message as StartMessage).data.lamps,
-          stations: (message as StartMessage).data.stations,
+          pillars: (message as AllDataMessage).data.pillars,
+          stations: (message as AllDataMessage).data.dron_stations,
         });
+        return;
       }
     };
     ws.onclose = () => set({ isConnected: false, socket: null });
@@ -71,19 +70,12 @@ export const useSocketStore = create<State & Actions>((set, get) => ({
     }
   },
 
-  updateLamp: (lamp: Lamp) =>
-    set((state) => ({
-      lamps: { ...state.lamps, [lamp.id]: lamp },
-    })),
+  setSelectedPillar: (pillar: Pillar) => set({ selectedPillar: pillar }),
+  setSelectedStation: (station: DronStation) =>
+    set({ selectedStation: station }),
 
-  updateStation: (station: Station) =>
-    set((state) => ({
-      stations: { ...state.stations, [station.id]: station },
-    })),
-  setSelectedLampId: (id: string) => set({ selectedLampId: id }),
-  setSelectedStationId: (id: string) => set({ selectedStationId: id }),
-  unselectLamp: () => set({ selectedLampId: null }),
-  unselectStation: () => set({ selectedStationId: null }),
+  unselectPillar: () => set({ selectedPillar: null }),
+  unselectStation: () => set({ selectedStation: null }),
 }));
 
 export default useSocketStore;

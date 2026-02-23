@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback } from "react";
 
 import { useSocketStore } from "../../stores/socketStore.ts";
 import { Legend } from "./Legend.tsx";
-import type { Lamp, Station, LampStatus } from "../../types/type.ts";
+import type { Pillar, DronStation, LampStatus } from "../../types/type.ts";
 
 const LAMP_RADIUS = 8;
 const STATION_RADIUS = 14;
@@ -25,17 +25,17 @@ export function MapCanvas() {
   const {
     stations,
     lamps,
-    selectedLampId,
-    selectedStationId,
-    unselectLamp,
-    setSelectedLampId,
+    selectedPillar,
+    selectedStation,
+    unselectPillar,
+    setSelectedPillar,
   } = useSocketStore((state) => ({
     stations: state.stations,
-    lamps: state.lamps,
-    selectedStationId: state.selectedStationId,
-    selectedLampId: state.selectedLampId,
-    unselectLamp: state.unselectLamp,
-    setSelectedLampId: state.setSelectedLampId,
+    lamps: state.pillars,
+    selectedStation: state.selectedStation,
+    selectedPillar: state.selectedPillar,
+    unselectPillar: state.unselectPillar,
+    setSelectedPillar: state.setSelectedPillar,
   }));
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -55,24 +55,25 @@ export function MapCanvas() {
 
     stations.forEach((station) => {
       const isHighlighted =
-        selectedStationId === null || selectedStationId === station.id;
+        selectedStation === null || selectedStation.id === station.id;
       const alpha = isHighlighted ? 0.12 : 0.04;
       drawStationLines(ctx, station, lamps, alpha);
     });
 
     lamps.forEach((lamp) => {
       const isDimmed =
-        selectedStationId !== null && lamp.stationId !== selectedStationId;
-      const isSelected = selectedLampId === lamp.id;
+        selectedStation !== null &&
+        lamp.pillar_station_id !== selectedStation.id;
+      const isSelected = selectedPillar?.id === lamp.id;
       drawLamp(ctx, lamp, isDimmed, isSelected);
     });
 
     stations.forEach((station) => {
       const isDimmed =
-        selectedStationId !== null && station.id !== selectedStationId;
+        selectedStation !== null && station.id !== selectedStation.id;
       drawStation(ctx, station, isDimmed);
     });
-  }, [lamps, stations, selectedStationId, selectedLampId]);
+  }, [lamps, stations, selectedStation, selectedPillar]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -95,11 +96,11 @@ export function MapCanvas() {
     draw();
   }, [draw]);
 
-  function onLampClick(lamp: Lamp) {
-    if (lamp.id == selectedLampId) {
-      unselectLamp();
+  function onLampClick(lamp: Pillar) {
+    if (lamp.id == selectedPillar?.id) {
+      unselectPillar();
     } else {
-      setSelectedLampId(lamp.id);
+      setSelectedPillar(lamp);
     }
   }
 
@@ -159,11 +160,11 @@ function drawGrid(ctx: CanvasRenderingContext2D, w: number, h: number) {
 
 function drawStationLines(
   ctx: CanvasRenderingContext2D,
-  station: Station,
-  lamps: Lamp[],
+  station: DronStation,
+  lamps: Pillar[],
   alpha: number,
 ) {
-  const stationLamps = lamps.filter((l) => l.stationId === station.id);
+  const stationLamps = lamps.filter((l) => l.pillar_station_id === station.id);
   ctx.strokeStyle = `rgba(99,130,246,${alpha})`;
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 4]);
@@ -180,11 +181,11 @@ function drawStationLines(
 
 function drawLamp(
   ctx: CanvasRenderingContext2D,
-  lamp: Lamp,
+  lamp: Pillar,
   isDimmed: boolean,
   isSelected: boolean,
 ) {
-  const { fill, glow } = LAMP_COLORS[lamp.status];
+  const { fill, glow } = LAMP_COLORS[lamp.state];
   const alpha = isDimmed ? DIM_ALPHA : 1;
   const { x, y } = lamp.coordinates;
 
@@ -220,7 +221,7 @@ function drawLamp(
 
 function drawStation(
   ctx: CanvasRenderingContext2D,
-  station: Station,
+  station: DronStation,
   isDimmed: boolean,
 ) {
   const alpha = isDimmed ? DIM_ALPHA : 1;
@@ -272,7 +273,7 @@ function drawStation(
   ctx.font = "10px system-ui";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
-  ctx.fillText(station.name, x, y + STATION_RADIUS + 4);
+  ctx.fillText(station.id, x, y + STATION_RADIUS + 4);
 
   ctx.globalAlpha = 1;
   ctx.textAlign = "left";
