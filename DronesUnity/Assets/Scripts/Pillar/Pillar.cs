@@ -1,4 +1,4 @@
-using UnityEngine;
+п»їusing UnityEngine;
 using System;
 using System.Collections;
 
@@ -28,13 +28,18 @@ public class Pillar : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (_currentDrone == null&&
-            other.CompareTag("Drone")&&
-            CurrentState == PillarState.Broken)
-        {
-            _currentDrone = other.GetComponent<Drone>();
-            StartCoroutine(WaitAndtartRepare());
-        }
+        if (!other.CompareTag("Drone"))
+            return;
+
+        if (CurrentState != PillarState.Broken)
+            return; // вњ… Р±РѕР»СЊС€Рµ РЅРµ СЂРµР°РіРёСЂСѓРµРј
+
+        Drone newDrone = other.GetComponent<Drone>();
+        if (_currentDrone != null && _currentDrone != newDrone)
+            return;
+
+        _currentDrone = newDrone;
+        StartCoroutine(WaitAndtartRepare());
     }
 
     public void Initialize(string newId)
@@ -81,24 +86,27 @@ public class Pillar : MonoBehaviour
         _anim.BrokeLamp();        
 
         OnBroken?.Invoke(ID);
-        //так же менять материалы для визуализации и прочее
+        //С‚Р°Рє Р¶Рµ РјРµРЅСЏС‚СЊ РјР°С‚РµСЂРёР°Р»С‹ РґР»СЏ РІРёР·СѓР°Р»РёР·Р°С†РёРё Рё РїСЂРѕС‡РµРµ
     }
 
     private void SendTotationToChangeLamp(string id)
     {
         _currentDrone.OnTakingBrokenAnimEnded -= SendTotationToChangeLamp;
+        _currentDrone.OnDroneReachedTarget -= StartSettingNewLamp; // рџ”Ґ
+
         _currentDrone.GoChangeLamp();
         _anim.CloseDroneLocator();
-        _currentDrone.OnDroneReachedTarget += StartSettingNewLamp;
     }
 
     private void StartSettingNewLamp(string droneID)
     {
-        _currentDrone.StartRepairAnimation(false);
+        _currentDrone.StartRepairAnimation(false); // SetLamp
         _currentDrone.OnDroneReachedTarget -= StartSettingNewLamp;
-        Debug.Log($"Drone {_currentDrone.ID} set new lamp to Pillar ({ID})");
-        _isHasLamp = true;
-        //_currentDrone.OnTakingBrokenAnimEnded += SendToHome;
+
+        CurrentState = PillarState.Working; // вњ… РљР›Р®Р§Р•Р’Рћ
+        _currentDrone = null;               // вњ… РѕСЃРІРѕР±РѕР¶РґР°РµРј СЃС‚РѕР»Р±
+
+        Debug.Log($"Drone {_currentDrone.ID} finished repair Pillar ({ID})");
     }
 
     private void StartTakingLampAnim(string droneID)
@@ -115,7 +123,7 @@ public class Pillar : MonoBehaviour
     {
         yield return new WaitForSeconds(3f);
 
-        // Плавный полёт к стартовой позиции анимации
+        // РџР»Р°РІРЅС‹Р№ РїРѕР»С‘С‚ Рє СЃС‚Р°СЂС‚РѕРІРѕР№ РїРѕР·РёС†РёРё Р°РЅРёРјР°С†РёРё
         _currentDrone.MoveToStartAnimPos(_droneStartAnimPos);
 
         _currentDrone.OnDroneReachedTarget += StartTakingLampAnim;

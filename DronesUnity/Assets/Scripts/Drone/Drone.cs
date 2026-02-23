@@ -34,7 +34,7 @@ public class Drone : MonoBehaviour
     public DroneLampHolderState CurrentLampHolderState { get; private set; }
 
     public Vector3 TargetCoordinates;
-    public Vector3 CurrentLampCoord;
+    public Vector3 CurrentPillarCoord;
 
     public string ID { get; private set; }
 
@@ -76,6 +76,7 @@ public class Drone : MonoBehaviour
 
     private bool _isHovering = false;
     private bool _isGoHome;
+    private bool _isReturningToPillar;
     public bool IsHasBrokenLamp { get; private set; }
 
     private Animator _anim;
@@ -99,6 +100,47 @@ public class Drone : MonoBehaviour
         Debug.Log($"Drone {ID} Initialized! _stationCoordinates = {_stationCoordinates}");
     }
 
+    // Вызывается ТОЛЬКО ОДИН РАЗ — когда столб сломался
+    public void AssignPillar(Vector3 pillarWorldPosition)
+    {
+        CurrentPillarCoord = pillarWorldPosition; // ✅ ОДИН РАЗ
+        SetTarget(pillarWorldPosition, doRandom: true);
+        Launch();
+        CurrentDroneState = DronState.Flying;
+    }
+
+    public void SetHeight(float requiredHeight)
+    {
+        _reservedFlyHight = requiredHeight;
+    }
+
+    public void SetTarget(Vector3 targetCoordinates, bool doRandom = true)
+    {
+        if (targetCoordinates != _stationCoordinates)
+        {
+            //CurrentPillarCoord = targetCoordinates;
+
+
+            Debug.Log($"CurrentLampCoord {CurrentPillarCoord}");
+        }
+
+        float factorX = 0f;
+        float factorZ = 0f;
+
+        if (doRandom)
+        {
+            System.Random rand = new System.Random();
+            //разброс в радиусе 3м от таргет точки, тк gps не точный
+            factorX = rand.Next(-300, 301) / 100;
+            factorZ = rand.Next(-300, 301) / 100;
+        }
+
+        TargetCoordinates = new Vector3(targetCoordinates.x + factorX,
+                                         targetCoordinates.y,
+                                         targetCoordinates.z + factorZ);
+    }
+
+
     public void Launch()
     {
         if (CurrentDroneState == DronState.Broken ||
@@ -112,6 +154,7 @@ public class Drone : MonoBehaviour
             StopCoroutine(_flightCoroutine);
 
         Debug.Log($"Drone ({ID}) launched");
+
 
         _flightCoroutine = StartCoroutine(FlySequence());
     }
@@ -129,13 +172,24 @@ public class Drone : MonoBehaviour
 
     public void GoChangeLamp()
     {
-        _isGoHome = true;
-        Vector3 stationPos = new(_stationCoordinates.x, _stationCoordinates.y, _stationCoordinates.z);
+        // защита от повторного запуска
+        if (CurrentDroneState == DronState.GoChangeLamp)
+            return;
+
         CurrentDroneState = DronState.GoChangeLamp;
-        SetTarget(stationPos, false);
+        _isGoHome = true;
+
+        SetTarget(_stationCoordinates, false);
+
+        OnDroneReachedTarget += OnReachedStationForLampChange;
         Launch();
-        Debug.LogWarning($"Drone ({ID}) go home");
-        _anim.applyRootMotion = true;
+    }
+
+    private void OnReachedStationForLampChange(string droneID)
+    {
+        OnDroneReachedTarget -= OnReachedStationForLampChange;
+
+        ChangeLampInStation(); // ✅ ТЕПЕРЬ ПРАВИЛЬНО
     }
 
     public void StartRepairAnimation(bool isHasLamp)
@@ -150,8 +204,8 @@ public class Drone : MonoBehaviour
         {
             _anim.SetTrigger("TakeLamp");
             IsHasBrokenLamp = true;
-            CurrentLampCoord = TargetCoordinates;
-            Debug.Log($"CurrentLampCoord {CurrentLampCoord}");
+            //CurrentPillarCoord = TargetCoordinates;
+            Debug.Log($"CurrentLampCoord {CurrentPillarCoord}");
         }
         _anim.applyRootMotion = false;
     }
@@ -166,8 +220,7 @@ public class Drone : MonoBehaviour
     public void OnChangeToWorkingLampAnimEnded()
     {
         CurrentDroneState = DronState.HaveWorkingLamp;
-        SetTarget(CurrentLampCoord);
-        
+        SetTarget(CurrentPillarCoord, false);
         Launch();
     }
 
@@ -176,13 +229,26 @@ public class Drone : MonoBehaviour
         OnTakingBrokenAnimEnded?.Invoke(ID);
     }
 
-    public void OnChangingLampAnimEnded()
+    // Animation Event в конце "Анимация установки"
+    public void OnInstallLampAnimEnded()
     {
-        OnTakingBrokenAnimEnded?.Invoke(ID);
+        // 🔥 МИССИЯ ЗАВЕРШЕНА
+        CurrentPillarCoord = Vector3.zero;
+        IsHasBrokenLamp = false;
+
+        CurrentDroneState = DronState.Ready;
+
+        GoHome(); // просто летим на базу
     }
+
+    //public void OnChangingLampAnimEnded()
+    //{
+    //    OnTakingBrokenAnimEnded?.Invoke(ID);
+    //}
 
     private IEnumerator FlySequence()
     {
+ 
         //CurrentDroneState = DronState.Flying;
 
         // Шаг 1: Поднимаемся на заданную высоту
@@ -217,34 +283,19 @@ public class Drone : MonoBehaviour
         Debug.Log($"Дрон {ID}: Достиг цели и находится на высоте лампы!");
         //CurrentDroneState = DronState.Charging;
         //SetFlightState(FlightSubState.Hovering);
-        
+
         if (_isGoHome)
         {
-            if (CurrentDroneState == DronState.GoChangeLamp)
-            {
-                OnDroneNeedChangingLamp?.Invoke(ID);
-                CurrentDroneState = DronState.HaveWorkingLamp;
-                Debug.Log($"Drone need to change lamp");
-            }
-            else if(CurrentDroneState == DronState.HaveWorkingLamp)
-            {
-                SetTarget(CurrentLampCoord, false);
-                Launch();
-                CurrentDroneState = DronState.Flying;
-            }
-            else
-            {
-                CurrentDroneState = DronState.Ready;
-                OnDroneReady?.Invoke(ID);
-                Debug.Log($"Drone landed to station and now ready");
-                //здесь он должен начать ждать след задания
-            }
+            _isGoHome = false;
+            CurrentDroneState = DronState.Ready;
+            OnDroneReady?.Invoke(ID);
         }
         else
         {
             OnDroneReachedTarget?.Invoke(ID);
         }
     }
+
 
     #region Fly process
 
@@ -489,18 +540,6 @@ public class Drone : MonoBehaviour
         }
     }
 
-    // Метод для проверки, находится ли дрон в полете
-    public bool IsFlying()
-    {
-        return CurrentDroneState == DronState.Flying;
-    }
-
-    // Метод для проверки, зависает ли дрон
-    public bool IsHovering()
-    {
-        return _isHovering && CurrentFlightState == FlightSubState.Hovering;
-    }
-
     #endregion
 
 
@@ -522,36 +561,7 @@ public class Drone : MonoBehaviour
         }
     }
 
-    public void SetHeight(float requiredHeight)
-    {
-        _reservedFlyHight = requiredHeight;
-    }
-
-    public void SetTarget(Vector3 targetCoordinates, bool doRandom = true)
-    {
-        if (targetCoordinates != _stationCoordinates)
-        {
-            CurrentLampCoord = targetCoordinates;
-
-
-            Debug.Log($"CurrentLampCoord {CurrentLampCoord}");
-        }
-
-        float factorX = 0f;
-        float factorZ = 0f;
-
-        if (doRandom)
-        {
-            System.Random rand = new System.Random();
-            //разброс в радиусе 3м от таргет точки, тк gps не точный
-            factorX = rand.Next(-300, 301) / 100;
-            factorZ = rand.Next(-300, 301) / 100;
-        }
-
-        TargetCoordinates = new Vector3(targetCoordinates.x + factorX,
-                                         targetCoordinates.y,
-                                         targetCoordinates.z + factorZ);
-    }
+ 
 
     #endregion
 

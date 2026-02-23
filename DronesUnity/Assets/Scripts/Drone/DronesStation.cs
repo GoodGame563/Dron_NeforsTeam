@@ -141,7 +141,7 @@ public class DronesStation : MonoBehaviour
     {
         foreach (Drone drone in _drones)
         {
-            drone.GoChangeLamp();
+            drone.GoHome();
         }
     }
 
@@ -165,6 +165,7 @@ public class DronesStation : MonoBehaviour
 
         Debug.Log($"@Drones station: free drone founded");
 
+        droneToFly.AssignPillar(targetPillarPosition);
         droneToFly.SetTarget(targetPillarPosition);
         droneToFly.SetHeight(20f);
         droneToFly.Launch();
